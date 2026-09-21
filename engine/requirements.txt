@@ -1,0 +1,6 @@
+# 每日复盘引擎
+pandas>=2.0
+numpy>=1.24
+requests>=2.31
+# 测试（tests/ 下为 pytest 兼容用例，也可直接 python 运行）
+pytest>=7.0

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>每日复盘 · 结论版</title>
+<meta name="description" content="A股短线每日复盘结论版：自动引擎生成。"/>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<!-- ═══ 粘性章节导航 ═══ -->
+<nav id="sec-nav" aria-label="章节导航">
+  <div class="sec-nav-inner">
+    <span class="sec-nav-brand">复盘 09-07</span>
+    <a href="#sec-glance">速览</a>
+    <a href="#sec-market">市场</a>
+    <a href="#sec-lines">主线</a>
+    <a href="#sec-leader">龙头</a>
+    <a href="#sec-plan">计划</a>
+    <a href="#sec-risk">风险</a>
+    <a href="#sec-pool">股池</a>
+    <a href="#sec-pattern">形态</a>
+    <a href="#sec-news">新闻</a>
+    <a href="#sec-sources">来源</a>
+  </div>
+</nav>
+
+<!-- ═══ 封面 ═══ -->
+<header id="cover">
+  <canvas id="cover-canvas"></canvas>
+  <div class="cover-inner">
+    <div class="cover-copy">
+      <p class="cover-kicker" id="cover-kicker">A股短线每日复盘</p>
+      <h1 class="cover-title" id="cover-title">每日复盘<br/><span class="cover-num">加载中…</span></h1>
+      <p class="cover-sub" id="cover-sub"></p>
+      <p class="cover-lede" id="cover-lede"></p>
+      <div class="cover-chips">
+        <button class="chip" data-goto="#sec-glance">速览</button>
+        <button class="chip" data-goto="#sec-market">市场状态</button>
+        <button class="chip" data-goto="#sec-lines">主线推演</button>
+        <button class="chip" data-goto="#sec-leader">龙头</button>
+        <button class="chip" data-goto="#sec-plan">明日计划</button>
+        <button class="chip" data-goto="#sec-risk">特殊提醒</button>
+        <button class="chip" data-goto="#sec-pool">自建股池</button>
+        <button class="chip" data-goto="#sec-pattern">形态信号</button>
+        <button class="chip" data-goto="#sec-news">新闻</button>
+        <button class="chip" data-goto="#sec-sources">来源</button>
+      </div>
+      <p class="cover-anchor" id="cover-anchor"></p>
+      <div class="scroll-hint"><span></span>SCROLL</div>
+    </div>
+    <div class="cover-void" aria-hidden="true"></div>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══ 速览 ═══ -->
+<section id="sec-glance" class="band">
+  <div class="prose">
+    <p class="sec-no">速览 · Executive glance</p>
+    <h2 id="glance-title">每日定性</h2>
+    <p class="dek" id="glance-dek"></p>
+  </div>
+  <div class="wide xl">
+    <div class="metric-strip" id="metric-strip"></div>
+  </div>
+  <div class="prose" style="margin-top:34px">
+    <p id="pos-note"></p>
+    <p id="ban-note"></p>
+    <div class="note-box"><p id="watch-note"></p></div>
+    <p class="sub-h">做什么 · 两表分账（详见「明日计划」）</p>
+  </div>
+  <div class="wide xl">
+    <table class="dt">
+      <thead><tr><th>优先级</th><th>仓别</th><th>标的</th><th>路径＋触发</th><th>仓位</th></tr></thead>
+      <tbody id="glance-plan-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ 板块 2 · 市场状态 ═══ -->
+<section id="sec-market" class="band">
+  <div class="prose">
+    <p class="sec-no">板块 2 · 市场状态</p>
+    <h2 id="market-h">市场状态</h2>
+    <p class="dek" id="market-dek"></p>
+  </div>
+  <div class="wide xl"><div id="dims-chart" class="chart-frame"></div></div>
+  <div class="wide xl" style="margin-top:38px"><div id="odds-chart" class="chart-frame"></div></div>
+  <div class="prose" style="margin-top:30px">
+    <p class="sub-h">外围与政策（自动快讯）</p>
+    <div id="global-policy-block"></div>
+    <div class="note-box"><p id="branch-note"></p></div>
+  </div>
+</section>
+
+<!-- ═══ 板块 3 · 主线推演 ═══ -->
+<section id="sec-lines" class="band">
+  <div class="prose">
+    <p class="sec-no">板块 3 · 主线推演</p>
+    <h2 id="lines-h">主线</h2>
+    <p class="dek" id="lines-dek"></p>
+  </div>
+  <div class="wide xl">
+    <table class="dt">
+      <thead><tr><th>级别</th><th>板块</th><th>当前阶段</th><th>明日操作结论</th></tr></thead>
+      <tbody id="lines-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ 板块 4 · 龙头 ═══ -->
+<section id="sec-leader" class="band">
+  <div class="prose">
+    <p class="sec-no">板块 4 · 龙头</p>
+    <h2>全场无公认单一龙头（双极并存）</h2>
+    <p class="dek">龙头分两极：<b>容量极</b> = 当日成交与封单最大的身位股；<b>连板极</b> = 当日最高板。两极互不替代——资金结构分裂为「机构趋势」与「情绪连板」两个生态，明日竞价决定哪一极升格。（具体标的一律见下表，由引擎按当日数据生成。）</p>
+  </div>
+  <div class="wide xl">
+    <table class="dt">
+      <thead><tr><th>标的</th><th>等效高度</th><th>结论</th></tr></thead>
+      <tbody id="leaders-tbody"></tbody>
+    </table>
+    <div class="note-box" style="margin-top:22px"><p><b>龙头切换迹象。</b>若明日前排主线 ≥3 家涨停开＋容量极续强，则「容量极」升格为全场主线核心；切换确认前维持双极表述。连板极断板信号 = 竞价封单骤降或低开 &lt;-3%；容量极见顶信号 = 放量滞涨（长上影）或大额净卖，不预设时点。</p></div>
+  </div>
+</section>
+
+<!-- ═══ 板块 5 · 明日计划 ═══ -->
+<section id="sec-plan" class="band">
+  <div class="prose">
+    <p class="sec-no">板块 5 · 明日计划</p>
+    <h2 id="plan-h">明日计划</h2>
+    <p class="dek" id="plan-dek"></p>
+    <p class="sub-h">表 1 · 核心趋势仓</p>
+  </div>
+  <div class="wide xl">
+    <table class="dt">
+      <thead><tr><th>标的</th><th>路径＋触发</th><th>失效条件</th><th>仓位</th><th>止损/时间止损</th></tr></thead>
+      <tbody id="plan1-tbody"></tbody>
+    </table>
+  </div>
+  <div class="prose"><p class="sub-h">表 2 · 隔夜套利仓</p></div>
+  <div class="wide xl">
+    <table class="dt">
+      <thead><tr><th>优先级</th><th>标的</th><th>路径＋触发</th><th>失效条件</th><th>仓位</th><th>卖点/止损</th></tr></thead>
+      <tbody id="plan2-tbody"></tbody>
+    </table>
+  </div>
+  <div class="prose" style="margin-top:30px">
+    <p class="sub-h">不做清单（刚性 · 8 条）</p>
+    <ol class="bans" id="bans-ol"></ol>
+    <p class="sub-h" style="margin-top:30px">盘中应变矩阵（7 场景）</p>
+  </div>
+  <div class="wide xl">
+    <table class="dt">
+      <thead><tr><th>场景</th><th>触发条件</th><th>应对</th></tr></thead>
+      <tbody id="scen-tbody"></tbody>
+    </table>
+  </div>
+  <div class="prose"><p class="sub-h" style="margin-top:30px">右侧核心评分（5.5 结论 · 四维绝对标准全量：题材/地位/合力/韧性 → 综合/弹性）</p></div>
+  <div class="wide xl">
+    <table class="dt">
+      <thead><tr><th>标的</th><th>题材</th><th>地位</th><th>合力</th><th>韧性</th><th>综合</th><th>弹性</th><th>评级 → 行动</th></tr></thead>
+      <tbody id="scores-tbody"></tbody>
+    </table>
+  </div>
+  <div class="prose"><p class="sub-h" style="margin-top:30px">关注标的快评（5.6 结论）</p></div>
+  <div class="wide xl">
+    <table class="dt">
+      <thead><tr><th>标的</th><th>判定</th><th>一句话</th></tr></thead>
+      <tbody id="watch-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ 板块 6 · 特殊提醒 ═══ -->
+<section id="sec-risk" class="band">
+  <div class="prose">
+    <p class="sec-no">板块 6 · 特殊提醒</p>
+    <h2 id="risk-h">特殊提醒</h2>
+    <p class="dek" id="risk-dek"></p>
+  </div>
+  <div class="wide xl">
+    <table class="dt">
+      <thead><tr><th>级别</th><th>风险</th><th>触发 / 证伪</th><th>操作约束</th></tr></thead>
+      <tbody id="risks-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ 板块 7 · 自建股池 ═══ -->
+<section id="sec-pool" class="band">
+  <div class="prose">
+    <p class="sec-no">板块 7 · 自建股池</p>
+    <h2>自选池 · 条件单优先</h2>
+    <p class="dek" id="pool-dek"></p>
+  </div>
+  <div class="wide xl">
+    <table class="dt">
+      <thead><tr><th>方向</th><th>标的</th><th>状态</th><th>结论</th></tr></thead>
+      <tbody id="pool-tbody"></tbody>
+    </table>
+    <div class="note-box" style="margin-top:22px"><p><b>注意力体检结论。</b><span id="pool-check"></span></p></div>
+  </div>
+</section>
+
+<!-- ═══ 板块 8 · PatternComboGate 形态信号 ═══ -->
+<section id="sec-pattern" class="band">
+  <div class="prose">
+    <p class="sec-no">板块 8 · PatternComboGate</p>
+    <h2 id="pg-title">形态组合信号 · Top10</h2>
+    <p class="dek" id="pg-dek">读取中…</p>
+  </div>
+  <div class="wide xl">
+    <div class="note-box" id="pg-note"></div>
+    <table class="dt">
+      <thead>
+        <tr>
+          <th>#</th><th>标的</th><th>评分</th><th>参考概率</th>
+          <th>命中组合</th><th>信号日涨跌</th>
+        </tr>
+      </thead>
+      <tbody id="pg-tbody"></tbody>
+    </table>
+    <p class="sub-h">本次保留的正收益组合（2026 事件研究）</p>
+    <div id="pg-combos"></div>
+  </div>
+</section>
+
+<!-- ═══ 板块 9 · 新闻快讯 ═══ -->
+<section id="sec-news" class="band">
+  <div class="prose">
+    <p class="sec-no">板块 9 · 新闻快讯</p>
+    <h2>政策 · 外围 · 事件 · 风险</h2>
+    <p class="dek" id="news-dek">自动汇总公开快讯（新浪 7×24 / 东财 / 财联社），关键词归类，非完整舆情。</p>
+  </div>
+  <div class="wide xl">
+    <p class="sub-h">政策 / 监管</p>
+    <div id="news-policy" class="news-list"></div>
+    <p class="sub-h">外围 / 全球</p>
+    <div id="news-global" class="news-list"></div>
+    <p class="sub-h">事件窗口</p>
+    <div id="news-event" class="news-list"></div>
+    <p class="sub-h">风险提示</p>
+    <div id="news-risk" class="news-list"></div>
+  </div>
+</section>
+
+<!-- ═══ 来源 ═══ -->
+<footer id="sec-sources">
+  <div class="prose">
+    <p class="sec-no">来源与方法 · Sources &amp; method</p>
+    <h2>方法、纪律与来源</h2>
+    <div class="note-box">
+      <p><b>证据分级。</b>公司/监管一手 &gt; 官方/行业 &gt; 媒体转引 &gt; 数据商汇编；推算项显式标注 [推算]（等效板数 = R4 口径自算）。</p>
+      <p><b>来源类别（均带日期）。</b><span class="src-cat company">公司/监管一手</span> <span class="src-cat industry">官方/行业</span> <span class="src-cat broker">媒体转引</span> <span class="src-cat kimi">数据商汇编</span></p>
+      <p><b>取数纪律。</b>免费公开源优先（东财双池/龙虎榜＋新浪日K/资金流/国际期货＋公开收评）→ iFinD → Wind 兜底控成本；关键定性双源交叉；晋级率经 R35 四步核验；PCB 家数按 R34 题材口径归类；本页为结论版，完整推演见 Markdown 报告（Prompt v4.14）。</p>
+    </div>
+  </div>
+  <div class="wide xl">
+    <div style="margin-top:26px">
+      <p class="chart-title">来源登记 · K1–K17</p>
+      <p class="chart-sub">本页每个关键数字的出处与日期 · 点击封面/图表/◆ 可逐数回溯</p>
+    </div>
+    <div id="source-list"></div>
+  </div>
+  <div class="prose">
+    <p class="colophon" id="colophon">以上为盘面数据自动汇总与策略规则骨架，非投资建议；仓位纪律优先于一切买点判断。
+自动引擎 · qlib/Parquet/DuckDB 本地行情 + 东财涨停池 + 公开快讯</p>
+  </div>
+</footer>
+
+</main>
+
+<div id="drill-card" hidden></div>
+
+<script src="js/data.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/cover.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/sources.js"></script>
+<script>
+// 全页由 data.js 驱动（自动引擎）
+(() => {
+  const D = window.RPT || {};
+  const $ = (id) => document.getElementById(id);
+  const fill = (id, html) => { const el = $(id); if (el) el.innerHTML = html || ""; };
+  const setText = (id, t) => { const el = $(id); if (el && t != null) el.textContent = t; };
+  const P = D.pools || {};
+  const B = D.breadth || {};
+  const L = D.ladder || {};
+  const PR = D.promo || {};
+  const day = (D.meta && D.meta.reviewDay) || "";
+  const planDay = (D.meta && D.meta.planDay) || "";
+
+  // title / nav
+  document.title = `每日复盘 ${day} · ${(D.cover && D.cover.title) || ""} · 结论版`;
+  const brand = document.querySelector(".sec-nav-brand");
+  if (brand && day) brand.textContent = "复盘 " + String(day).slice(5);
+
+  // 封面
+  if (D.cover) {
+    setText("cover-kicker", D.cover.kicker);
+    const t = $("cover-title");
+    if (t) t.innerHTML = `${D.cover.title || ""}<br/><span class="cover-num">${D.cover.titleNum || ""}</span>`;
+    setText("cover-sub", D.cover.sub);
+  }
+  const ztN = P.zt ?? L.zt_total ?? 0;
+  const zbN = P.zb ?? 0;
+  const dtN = P.dt ?? 0;
+  const ladNote = `首板 ${L.first ?? 0} / 2板 ${L.second ?? 0} / 3板 ${L.third ?? 0} / 最高 ${L.topBoards ?? 0} 板${L.topName ? "（" + L.topName + "）" : ""}`;
+  setText("cover-lede",
+    `涨停 ${ztN} / 炸板 ${zbN}（${P.zbRate ?? "—"}%）/ 跌停 ${dtN}；晋级率 ${PR.rate ?? "—"}%` +
+    (PR.den ? `（${PR.num}/${PR.den}）` : "") +
+    `；红盘率 ${B.red_pct ?? P.redPct ?? "—"}%（涨 ${B.up ?? "—"} / 跌 ${B.down ?? "—"}）。` +
+    `状态 ${D.regime || "—"}，仓位锚 ${D.posAnchor ?? "—"} 成。计划日 ${planDay}。`
+  );
+  setText("cover-anchor", `右侧画布 = ${day} 连板阶梯 · ${ladNote} · 炸板 ${zbN} · 跌停 ${dtN}`);
+
+  // 速览
+  setText("glance-title", `一句话定性：${(D.cover && D.cover.title) || "—"}`);
+  const topSec = (D.sectors && D.sectors[0]) || {};
+  setText("glance-dek",
+    `最强题材 ${topSec.name || "—"} ${topSec.n || 0} 家涨停；${ladNote}；` +
+    `炸板率 ${P.zbRate ?? "—"}%；情绪 ${(D.score && D.score.today) ?? "—"} → 基准 ${(D.score && D.score.base36) ?? "—"}；${D.regime || ""}。`
+  );
+
+  // 指标条
+  const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const breadthIncomplete = D.breadth && D.breadth.complete === false;
+  const amtAllA = P.amountScope === "全A";
+  const metrics = [
+    { v: String(ztN), k: `涨停（连板 ${(L.second||0)+(L.third||0)+(L.top||0)}）`, drill: `涨停|${ztN} 家|${ladNote}|本地 qlib + 东财 · ${day}` },
+    { v: String(zbN), k: `炸板 · 炸板率 ${P.zbRate ?? "—"}%`, drill: `炸板|${zbN} 家|炸板率 ${P.zbRate}%|东财/本地 · ${day}` },
+    { v: String(dtN), k: "跌停", drill: `跌停|${dtN} 家|—|东财 · ${day}` },
+    { v: `${PR.rate ?? "—"}%`, k: PR.den ? `晋级率（${PR.num}/${PR.den}）` : "晋级率", drill: `晋级率|${PR.rate}%|${PR.den ? PR.num+"/"+PR.den : ""}|本地滚动 · ${day}` },
+    { v: String(P.amount ?? "—"), k: `${amtAllA ? "全A " : ""}成交（较前日 ${P.amountDelta ?? "—"}）`, drill: `成交|${P.amount}|口径 ${P.amountScope ?? "—"}；沪指 ${P.shClose ?? ""} ${P.shChg ?? ""}|${amtAllA ? "东财全市场分页求和" : "东财指数（沪市）"} · ${day}` },
+    { v: `${B.red_pct ?? P.redPct ?? "—"}%`, k: `红盘率（涨 ${B.up ?? "—"} / 跌 ${B.down ?? "—"}${B.flat != null ? ` / 平 ${B.flat}` : ""}）${breadthIncomplete ? " ⚠样本不完整" : ""}`, drill: `红盘率|${B.red_pct}%|涨 ${B.up} / 跌 ${B.down} / 平 ${B.flat}；样本 ${B.fetched ?? "—"} / 完整 ${B.complete ?? "—"}|东财全市场分页 · ${day}` },
+  ];
+  fill("metric-strip", metrics.map(m =>
+    `<div class="m" data-drill="${esc(m.drill)}"><div class="v">${m.v}</div><div class="k">${m.k}</div></div>`
+  ).join(""));
+  // rebind drill
+  document.querySelectorAll("#metric-strip [data-drill]").forEach(el =>
+    el.addEventListener("click", e => {
+      const [title, value, sub, source] = el.dataset.drill.split("|");
+      U.showDrill({ title, value, sub, source, x: e.clientX, y: e.clientY });
+    }));
+
+  const MR = D.macroRegime || {};
+  const AN = D.anchor || {};
+  const macroCheng = MR.position_cheng ?? (MR.position != null ? +(MR.position * 10).toFixed(1) : null);
+  setText("pos-note",
+    `仓位：锚 ${D.posAnchor ?? "—"} 成（${D.regime || "—"}，情绪 ${(D.score&&D.score.today) ?? "—"}）` +
+    (AN.board != null && AN.coeff != null
+      ? ` = 盘面 ${AN.board} 成 × 宏观系数 ${Number(AN.coeff).toFixed(2)}${AN.adjusted ? "" : "（未调整）"}`
+      : "") +
+    (MR.state
+      ? `；宏观 ${MR.state} ${macroCheng ?? "—"} 成` +
+        (MR.rate_is_proxy ? "（利率用国债ETF代理）" : `（利率 ${MR.rate_latest}%）`)
+      : "") +
+    `。结构以 B/C 条件单为主，不追竞价、不集中。`
+  );
+  const bans = D.bans || [];
+  setText("ban-note", bans.length ? `不做什么：${bans.slice(0, 5).join(" · ")}${bans.length>5?" …":""}` : "");
+  const line0 = (D.lines && D.lines[0]) || {};
+  setText("watch-note",
+    `第一观察：主线候选「${line0.name || "—"}」${line0.stage || ""}；${(D.branches&&D.branches[0]&&D.branches[0].cond) || "竞价再确认"}。`
+  );
+
+  // 速览两表
+  const glanceRows = [
+    ...(D.plan1 || []).map(p => ({ pri: p.pri || "表1", bag: "核心趋势", ...p })),
+    ...(D.plan2 || []).map(p => ({ pri: p.pri, bag: "隔夜套利", ...p })),
+  ];
+  fill("glance-plan-tbody", glanceRows.map(p =>
+    `<tr><td class="num">${p.pri}</td><td>${p.bag}</td><td><b>${p.name}</b></td><td>${p.path}：${p.trig}</td><td class="num">${p.pos}</td></tr>`
+  ).join(""));
+
+  // 板块标题
+  const marketH = $("market-h") || document.querySelector("#sec-market h2");
+  if (marketH) marketH.textContent = `${D.regime || "市场状态"} · 情绪 ${(D.score&&D.score.today) ?? "—"}`;
+  const marketDek = $("market-dek") || document.querySelector("#sec-market .dek");
+  if (marketDek) {
+    const mr = D.macroRegime || {};
+    let macroTxt = "";
+    if (mr.state) {
+      const rateTxt = mr.rate_is_proxy
+        ? `利率代理（国债ETF，${mr.rate_source === "degraded_bond_etf_511260" ? "511260" : mr.rate_source}）`
+        : `利率 ${mr.rate_latest}%`;
+      macroTxt = ` · 宏观 ${mr.state}（仓位参考 ${mr.position_cheng ?? (mr.position != null ? +(mr.position * 10).toFixed(1) : "—")} 成，${rateTxt}，${mr.as_of}）`;
+    }
+    marketDek.textContent =
+      `五维合计 ${(D.score&&D.score.today) ?? "—"} 分；广度红盘率 ${B.red_pct ?? "—"}%${breadthIncomplete ? "（⚠样本不完整）" : ""}；${ladNote}；晋级 ${PR.rate ?? "—"}%${macroTxt}。`;
+  }
+
+  const linesH = $("lines-h") || document.querySelector("#sec-lines h2");
+  if (linesH) linesH.textContent = line0.lv && line0.lv !== "（空缺）"
+    ? `主线：${line0.name}（${line0.lv}）`
+    : "S 级空缺 · 多线并存";
+  const linesDek = $("lines-dek") || document.querySelector("#sec-lines .dek");
+  if (linesDek) linesDek.textContent =
+    (D.sectors || []).slice(0, 6).map(s => `${s.name} ${s.n}`).join("、") || "—";
+
+  // 外围/政策块：用新闻自动填充
+  const gp = $("global-policy-block");
+  if (gp) {
+    const n = D.news || {};
+    const list = [...(n.global || []).slice(0, 4), ...(n.policy || []).slice(0, 4)];
+    gp.innerHTML = list.length
+      ? list.map(x => `<p>· <b>${x.title || ""}</b> <span class="muted">${x.source || ""} ${x.time || ""}</span></p>`).join("")
+      : `<p class="muted">暂无自动快讯</p>`;
+  }
+  const br = D.branches && D.branches.find(b => b.base) || (D.branches && D.branches[0]);
+  if ($("branch-note") && br) {
+    $("branch-note").innerHTML = `<b>明日剧本（基准 ${br.prob}%）。</b>${br.dir}：${br.cond}。`;
+  }
+
+  const leaderH = document.querySelector("#sec-leader h2");
+  if (leaderH) {
+    const topL = (D.leaders && D.leaders[0]) || {};
+    leaderH.textContent = topL.name ? `连板高位：${topL.name} ${topL.h}` : "高位连板待确认";
+  }
+  const planH = $("plan-h") || document.querySelector("#sec-plan h2");
+  if (planH) planH.textContent = `计划仓位锚 ${D.posAnchor ?? "—"} 成 · 条件单为主`;
+  if ($("plan-dek")) $("plan-dek").textContent =
+    `状态 ${D.regime || "—"}，情绪 ${(D.score&&D.score.today) ?? "—"}。表2 ${ (D.plan2||[]).length } 个条件单；表1 ${(D.plan1||[]).length} 项。`;
+  const riskH = $("risk-h") || document.querySelector("#sec-risk h2");
+  if (riskH && D.risks && D.risks[0]) riskH.textContent = D.risks[0].name || riskH.textContent;
+  if ($("risk-dek")) $("risk-dek").textContent =
+    (D.risks||[]).slice(0,2).map(r => r.name).join("；") || "见下表";
+
+  // 表格
+  fill("lines-tbody", (D.lines||[]).map(l =>
+    `<tr${l.tone === "hot" ? ' class="hl"' : ""}><td><span class="lv ${l.tone||"mute"}">${l.lv}</span></td><td><b>${l.name}</b></td><td>${l.stage}</td><td>${l.act}</td></tr>`).join("") ||
+    `<tr><td colspan="4" class="muted">未识别到板块主线（题材归类为空）</td></tr>`);
+  fill("leaders-tbody", (D.leaders||[]).map(l =>
+    `<tr${l.tone === "hot" ? ' class="hl"' : ""}><td><b>${l.name}</b></td><td class="num">${l.h}</td><td>${l.verdict}</td></tr>`).join("") ||
+    `<tr><td colspan="3" class="muted">当日无连板梯队（涨停池为空）</td></tr>`);
+  fill("plan1-tbody", (D.plan1||[]).map(p =>
+    `<tr><td><b>${p.name}</b></td><td>${p.path}：${p.trig}</td><td>${p.kill}</td><td class="num">${p.pos}</td><td>${p.stop}</td></tr>`).join("") ||
+    `<tr><td colspan="5" class="muted">自动模式未生成核心趋势仓（可人工补充 plan1）</td></tr>`);
+  fill("plan2-tbody", (D.plan2||[]).map(p =>
+    `<tr><td class="num">${p.pri}</td><td><b>${p.name}</b></td><td>${p.path}：${p.trig}</td><td>${p.kill}</td><td class="num">${p.pos}</td><td>${p.stop}</td></tr>`).join("") ||
+    `<tr><td colspan="6" class="muted">自动模式未生成隔夜套利条件单（可人工补充 plan2）</td></tr>`);
+  fill("bans-ol", (D.bans||[]).map(b => `<li>${b}</li>`).join(""));
+  fill("scen-tbody", (D.scenarios||[]).map(s =>
+    `<tr><td><b>${s.s}</b></td><td>${s.t}</td><td>${s.a}</td></tr>`).join("") ||
+    `<tr><td colspan="3" class="muted">自动模式未生成应变矩阵（可人工补充 scenarios）</td></tr>`);
+  fill("scores-tbody", (D.scores||[]).map(s => {
+    // 兼容 think_matrix 字段（theme/pos/flow/hold/grade/elastic）与旧字段（t/d/h/r/g/e）
+    const t = s.theme ?? s.t ?? "—";
+    const d = s.pos ?? s.d ?? "—";
+    const h = s.flow ?? s.h ?? "—";
+    const r = s.hold ?? s.r ?? "—";
+    const g = s.grade ?? s.g ?? "—";
+    const e = s.elastic ?? s.e ?? "—";
+    return `<tr><td><b>${s.name}</b></td><td class="num">${t}</td><td class="num">${d}</td><td class="num">${h}</td><td class="num">${r}</td><td class="num">${g}</td><td class="num">${e}</td><td>${s.act}</td></tr>`;
+  }).join("") || `<tr><td colspan="8" class="muted">自动模式未生成四维评分</td></tr>`);
+  fill("watch-tbody", (D.watch||[]).map(w =>
+    `<tr><td><b>${w.name}</b></td><td>${w.d}</td><td>${w.note}</td></tr>`).join("") ||
+    `<tr><td colspan="3" class="muted">无关注标的快评（本地行情缺该标的）</td></tr>`);
+  fill("risks-tbody", (D.risks||[]).map(r =>
+    `<tr><td class="num">${r.lv}</td><td><b>${r.name}</b></td><td>${r.t}</td><td>${r.a}</td></tr>`).join("") ||
+    `<tr><td colspan="4" class="muted">自动模式未生成风险项</td></tr>`);
+  fill("pool-tbody", (D.pool||[]).map(p =>
+    `<tr><td>${p.dir}</td><td><b>${p.name}</b></td><td>${p.st}</td><td>${p.note}</td></tr>`).join("") ||
+    `<tr><td colspan="4" class="muted">自选池为空</td></tr>`);
+
+  const pd = D.poolDelta || {};
+  if ($("pool-dek")) $("pool-dek").textContent =
+    [pd.out, pd.keep, pd.add].filter(Boolean).join("；") + "。";
+  if ($("pool-check")) $("pool-check").textContent = pd.check || "";
+
+  // PatternComboGate
+  const pg = D.patternGate || {};
+  if ($("pg-title") && pg.signalDate) {
+    $("pg-title").textContent = `形态组合信号 · Top${(pg.items||[]).length}`;
+  }
+  if ($("pg-dek")) {
+    const lag = D.dataLag && D.dataLag.qlibLast && pg.signalDate && pg.signalDate !== (D.meta||{}).reviewDay
+      ? ` · ⚠ qlib 最新 ${D.dataLag.qlibLast}，早于复盘日 ${(D.meta||{}).reviewDay}`
+      : "";
+    $("pg-dek").textContent = pg.signalDate
+      ? `信号日 ${pg.signalDate} 收盘 · 近5日红盘率 ${((pg.redMa5||0)*100).toFixed(1)}% · 信号日建议仓位 ${pg.gate || "—"} · 保留组合 ${pg.nCombos || 0} 个${lag}`
+      : "暂无形态信号（可先运行 engine/latest_pattern_combo.py）";
+  }
+  if ($("pg-note")) {
+    $("pg-note").innerHTML = pg.note
+      ? `<p><b>说明。</b>${pg.note}。仅供研究，非买入建议。</p>`
+      : `<p><b>说明。</b>概率/评分由 2026 事件研究启发式映射，仅供研究，非买入建议。</p>`;
+  }
+  fill("pg-tbody", (pg.items || []).map((it, i) => {
+    const pct = it.pct == null ? "—" : `${(it.pct * 100).toFixed(2)}%`;
+    const combos = (it.combos || []).map(c => `<span class="lv mid" style="margin:2px 4px 2px 0">${c}</span>`).join("");
+    return `<tr>
+      <td class="num">${i + 1}</td>
+      <td><b>${it.name}</b></td>
+      <td class="num">${it.score100 ?? "—"}</td>
+      <td class="num">${it.probLabel ?? "—"}</td>
+      <td>${combos || "—"}</td>
+      <td class="num">${pct}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="6" class="muted">暂无</td></tr>`);
+  fill("pg-combos", (pg.comboList || []).map(c =>
+    `<div class="src-row">
+      <span class="s-fact"><b>${c.name}</b>　命中 ${c.hits} 次 · 后5日均 ${(c.mean5d * 100).toFixed(2)}%</span>
+    </div>`
+  ).join("") || `<p class="muted">—</p>`);
+
+  // 新闻
+  const news = D.news || {};
+  const renderNews = (id, items) => {
+    fill(id, (items||[]).map(n =>
+      `<div class="src-row">
+        <span class="s-fact"><b>${(n.time||"").slice(5,16)}</b>　${n.title||""}</span>
+        <span class="s-cite"><span class="src-cat kimi">${n.source||""}</span>${(n.summary||"").slice(0,120)}</span>
+      </div>`).join("") || `<p class="muted">暂无</p>`);
+  };
+  renderNews("news-policy", news.policy);
+  renderNews("news-global", news.global);
+  renderNews("news-event", news.event);
+  renderNews("news-risk", news.risk);
+  if ($("news-dek") && news.count) {
+    $("news-dek").textContent = `自动汇总 ${news.count} 条快讯（源：${(news.sources_ok||[]).join("/")||"—"}），关键词归类，非完整舆情。`;
+  }
+  if ($("colophon") && day) {
+    $("colophon").textContent =
+      `以上为盘面数据自动汇总与策略规则骨架，非投资建议。\n复盘日 ${day} · 计划日 ${planDay} · 生成 ${(D.meta&&D.meta.genTime)||""}\n行情：qlib_bin/Parquet/DuckDB + 东财涨停池 · 新闻：新浪7×24/东财`;
+  }
+})();
+</script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
