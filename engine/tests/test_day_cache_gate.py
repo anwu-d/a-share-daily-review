@@ -97,6 +97,33 @@ def test_stale_load_does_not_rewrite_cache_file():
         RD.cache_path = orig
 
 
+def test_stale_v2_cache_rescales_fund_to_yi():
+    """缓存版本 2 的 zt[].fund 是 /1e4 旧口径（误标为亿）；离线沿用必须折算。
+
+    复核发现的残留漏洞：DAY_CACHE_VERSION 只挡在线缓存，--offline 放行旧缓存时
+    若不折算，会把 21491.05 万当作 21491.05 亿发到页面上。
+    """
+    payload = {"cacheVersion": 2,
+               "zt": [{"code": "000001", "fund": 21491.0502, "amount": 39.14},
+                       {"code": "000002", "fund": "x", "amount": 1.0}],
+               "dt": [], "zb": [], "sh": {"close": 3891.6},
+               "breadth": {"up": 1, "down": 0, "flat": 0, "total": 1, "red_pct": 100.0,
+                           "amount_yi": 1000.0, "complete": True}}
+    d = _load(payload, require_full=True, allow_stale=True)
+    assert d is not None
+    # 21491.0502 万 → 2.15 亿
+    assert abs(d["zt"][0]["fund"] - 2.15) < 0.01, d["zt"][0]
+    assert d["zt"][1]["fund"] is None, "无法解析的旧值必须置 None，不得猜单位"
+
+
+def test_stale_unknown_cache_blanks_fund():
+    """版本不是 2（单位口径未知）时置 None —— 宁可显示 — 也不猜。"""
+    payload = {"zt": [{"code": "000001", "fund": 21491.05}], "dt": [], "zb": [],
+               "sh": {}, "breadth": {"up": 1}}
+    d = _load(payload, require_full=True, allow_stale=True)
+    assert d is not None and d["zt"][0]["fund"] is None
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

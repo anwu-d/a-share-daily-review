@@ -55,6 +55,18 @@ def _date8(date_str: str) -> str:
 
 
 # ── 涨停池 ──────────────────────────────────────────────
+def yi(raw) -> float:
+    """东财金额字段（元）→ 亿。
+
+    设计审计 R4：涨停池 fund 原始单位是元，此前 /1e4 后标注「亿」会把封单
+    放大 1 万倍（实测有研硅 raw=214910502 → 页面显示 21491.05 亿，真实 2.15 亿）。
+    """
+    try:
+        return float(raw or 0) / 1e8
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def zt_pool(date: str) -> list[dict]:
     """date: YYYY-MM-DD"""
     url = "https://push2ex.eastmoney.com/getTopicZTPool"
@@ -81,7 +93,9 @@ def zt_pool(date: str) -> list[dict]:
                 "lbt": it.get("lbt"),
                 "hybk": it.get("hybk", ""),  # 行业板块
                 "zttj": it.get("zttj") or {},
-                "fund": it.get("fund", 0) / 1e4 if it.get("fund") else 0,  # 封单额(亿)
+                # 东财涨停池 fund 原始单位是元；此前 /1e4 后标注「亿」会把封单放大 1 万倍
+                # （实测有研硅 raw=214910502 → 页面显示 21491.05 亿，真实应为 2.15 亿）。
+                "fund": yi(it.get("fund")),  # 封单额（亿）
             }
         )
     return out

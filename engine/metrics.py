@@ -242,7 +242,7 @@ def emotion_score(
             "name": "赚钱效应延续性",
             "w": 25,
             "s": s2,
-            "note": f"晋级率 {rate}%（{promo.get('num')}/{promo.get('den')}）· 昨涨停溢价 {avg}% · 炸板率 {zb_rate_pct}%",
+            "note": f"晋级率 {rate}%（{promo.get('num')}/{promo.get('den')}）· 昨涨停溢价 {'—' if avg is None else avg}% · 炸板率 {zb_rate_pct}%",
             "src": "K2/K4",
         },
         {"name": "市场广度", "w": 20, "s": s3, "note": f"红盘率 {red_pct}%", "src": "K5/K6"},
@@ -383,3 +383,25 @@ def blend_position_anchor(anchor: float, macro_position, macro_as_of=None,
         "adjusted": coeff < 1.0,
         "reason": reason,
     }
+
+
+def leader_risk(lbc, seal_fund, turnover, is_top: bool = False) -> str:
+    """接力风险分级（设计审计 R3）。
+
+    之前龙头表的「结论」列 5 行全是同一句模板「接力风险高，只作温度计」，
+    根因是数据模型没有逐票字段。这里给一个可计算的分级：
+      * 最高板 → 恒为「高」（监管/断板风险优先于任何比率）
+      * 封单/成交 < 0.3 → 「高」（承接弱）
+      * 否则 → 「中」
+      * 成交缺失或为 0 → 「—」（不猜测）
+    """
+    if is_top:
+        return "高"
+    try:
+        seal = float(seal_fund or 0)
+        to = float(turnover or 0)
+    except (TypeError, ValueError):
+        return "—"
+    if to <= 0:
+        return "—"
+    return "高" if (seal / to) < 0.3 else "中"

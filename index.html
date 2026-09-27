@@ -1,3 +1,4 @@
+<!-- AI生成 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -8,27 +9,33 @@
 <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
+<p data-aigc-mark="1" style="margin:0 0 8px;font-size:10px;line-height:1.3;color:#6b6560;font-weight:400;">AI生成</p>
+
 
 <!-- ═══ 粘性章节导航 ═══ -->
+<div id="data-missing" class="data-missing" hidden></div>
 <nav id="sec-nav" aria-label="章节导航">
   <div class="sec-nav-inner">
     <span class="sec-nav-brand">复盘 09-07</span>
     <a href="#sec-glance">速览</a>
-    <a href="#sec-market">市场</a>
-    <a href="#sec-lines">主线</a>
+    <a href="#sec-market">市场状态</a>
+    <a href="#sec-lines">主线推演</a>
     <a href="#sec-leader">龙头</a>
-    <a href="#sec-plan">计划</a>
-    <a href="#sec-risk">风险</a>
-    <a href="#sec-pool">股池</a>
-    <a href="#sec-pattern">形态</a>
-    <a href="#sec-news">新闻</a>
-    <a href="#sec-sources">来源</a>
+    <a href="#sec-plan">明日计划</a>
+    <a href="#sec-risk">风险提示</a>
+    <a href="#sec-pool">自选池</a>
+    <a href="#sec-pattern">形态组合信号</a>
+    <a href="#sec-news">新闻快讯</a>
+    <a href="#sec-sources">来源与方法</a>
   </div>
 </nav>
 
 <!-- ═══ 封面 ═══ -->
 <header id="cover">
   <canvas id="cover-canvas"></canvas>
+  <div class="visually-hidden" id="cover-alt" aria-label="连板梯队数据表">
+    <table><caption>连板梯队</caption><thead><tr><th>梯队</th><th>家数</th></tr></thead><tbody></tbody></table>
+  </div>
   <div class="cover-inner">
     <div class="cover-copy">
       <p class="cover-kicker" id="cover-kicker">A股短线每日复盘</p>
@@ -41,11 +48,11 @@
         <button class="chip" data-goto="#sec-lines">主线推演</button>
         <button class="chip" data-goto="#sec-leader">龙头</button>
         <button class="chip" data-goto="#sec-plan">明日计划</button>
-        <button class="chip" data-goto="#sec-risk">特殊提醒</button>
-        <button class="chip" data-goto="#sec-pool">自建股池</button>
-        <button class="chip" data-goto="#sec-pattern">形态信号</button>
-        <button class="chip" data-goto="#sec-news">新闻</button>
-        <button class="chip" data-goto="#sec-sources">来源</button>
+        <button class="chip" data-goto="#sec-risk">风险提示</button>
+        <button class="chip" data-goto="#sec-pool">自选池</button>
+        <button class="chip" data-goto="#sec-pattern">形态组合信号</button>
+        <button class="chip" data-goto="#sec-news">新闻快讯</button>
+        <button class="chip" data-goto="#sec-sources">来源与方法</button>
       </div>
       <p class="cover-anchor" id="cover-anchor"></p>
       <div class="scroll-hint"><span></span>SCROLL</div>
@@ -57,9 +64,9 @@
 <main>
 
 <!-- ═══ 速览 ═══ -->
-<section id="sec-glance" class="band">
+<section id="sec-glance" class="band" data-name="速览">
   <div class="prose">
-    <p class="sec-no">速览 · Executive glance</p>
+    <p class="sec-no">板块 1 · 速览</p>
     <h2 id="glance-title">每日定性</h2>
     <p class="dek" id="glance-dek"></p>
   </div>
@@ -74,6 +81,7 @@
   </div>
   <div class="wide xl">
     <table class="dt">
+      <caption class="visually-hidden">速览 · 两表分账</caption>
       <thead><tr><th>优先级</th><th>仓别</th><th>标的</th><th>路径＋触发</th><th>仓位</th></tr></thead>
       <tbody id="glance-plan-tbody"></tbody>
     </table>
@@ -81,7 +89,7 @@
 </section>
 
 <!-- ═══ 板块 2 · 市场状态 ═══ -->
-<section id="sec-market" class="band">
+<section id="sec-market" class="band" data-name="市场状态">
   <div class="prose">
     <p class="sec-no">板块 2 · 市场状态</p>
     <h2 id="market-h">市场状态</h2>
@@ -97,7 +105,7 @@
 </section>
 
 <!-- ═══ 板块 3 · 主线推演 ═══ -->
-<section id="sec-lines" class="band">
+<section id="sec-lines" class="band" data-name="主线推演">
   <div class="prose">
     <p class="sec-no">板块 3 · 主线推演</p>
     <h2 id="lines-h">主线</h2>
@@ -105,6 +113,7 @@
   </div>
   <div class="wide xl">
     <table class="dt">
+      <caption class="visually-hidden">主线推演 · 板块梯队</caption>
       <thead><tr><th>级别</th><th>板块</th><th>当前阶段</th><th>明日操作结论</th></tr></thead>
       <tbody id="lines-tbody"></tbody>
     </table>
@@ -112,15 +121,16 @@
 </section>
 
 <!-- ═══ 板块 4 · 龙头 ═══ -->
-<section id="sec-leader" class="band">
+<section id="sec-leader" class="band" data-name="龙头">
   <div class="prose">
     <p class="sec-no">板块 4 · 龙头</p>
     <h2>全场无公认单一龙头（双极并存）</h2>
-    <p class="dek">龙头分两极：<b>容量极</b> = 当日成交与封单最大的身位股；<b>连板极</b> = 当日最高板。两极互不替代——资金结构分裂为「机构趋势」与「情绪连板」两个生态，明日竞价决定哪一极升格。（具体标的一律见下表，由引擎按当日数据生成。）</p>
+    <p class="dek">龙头分两极：<b>容量极</b> = 当日成交与封单最大的身位股；<b>连板极</b> = 当日最高板。两极互不替代——资金结构分裂为「机构趋势」与「情绪连板」两个生态，明日竞价决定哪一极升格。具体标的一律见下表。</p>
   </div>
   <div class="wide xl">
     <table class="dt">
-      <thead><tr><th>标的</th><th>等效高度</th><th>结论</th></tr></thead>
+      <caption class="visually-hidden">龙头 · 连板梯队（标的/板块/等效高度/封单/成交/接力风险）</caption>
+      <thead><tr><th>标的</th><th>板块</th><th>等效高度</th><th>封单(亿)</th><th>成交(亿)</th><th>接力风险</th></tr></thead>
       <tbody id="leaders-tbody"></tbody>
     </table>
     <div class="note-box" style="margin-top:22px"><p><b>龙头切换迹象。</b>若明日前排主线 ≥3 家涨停开＋容量极续强，则「容量极」升格为全场主线核心；切换确认前维持双极表述。连板极断板信号 = 竞价封单骤降或低开 &lt;-3%；容量极见顶信号 = 放量滞涨（长上影）或大额净卖，不预设时点。</p></div>
@@ -128,7 +138,7 @@
 </section>
 
 <!-- ═══ 板块 5 · 明日计划 ═══ -->
-<section id="sec-plan" class="band">
+<section id="sec-plan" class="band" data-name="明日计划">
   <div class="prose">
     <p class="sec-no">板块 5 · 明日计划</p>
     <h2 id="plan-h">明日计划</h2>
@@ -137,6 +147,7 @@
   </div>
   <div class="wide xl">
     <table class="dt">
+      <caption class="visually-hidden">明日计划 · 表1 核心趋势仓</caption>
       <thead><tr><th>标的</th><th>路径＋触发</th><th>失效条件</th><th>仓位</th><th>止损/时间止损</th></tr></thead>
       <tbody id="plan1-tbody"></tbody>
     </table>
@@ -144,6 +155,7 @@
   <div class="prose"><p class="sub-h">表 2 · 隔夜套利仓</p></div>
   <div class="wide xl">
     <table class="dt">
+      <caption class="visually-hidden">明日计划 · 表2 隔夜套利仓</caption>
       <thead><tr><th>优先级</th><th>标的</th><th>路径＋触发</th><th>失效条件</th><th>仓位</th><th>卖点/止损</th></tr></thead>
       <tbody id="plan2-tbody"></tbody>
     </table>
@@ -155,6 +167,7 @@
   </div>
   <div class="wide xl">
     <table class="dt">
+      <caption class="visually-hidden">明日计划 · 应变矩阵</caption>
       <thead><tr><th>场景</th><th>触发条件</th><th>应对</th></tr></thead>
       <tbody id="scen-tbody"></tbody>
     </table>
@@ -162,6 +175,7 @@
   <div class="prose"><p class="sub-h" style="margin-top:30px">右侧核心评分（5.5 结论 · 四维绝对标准全量：题材/地位/合力/韧性 → 综合/弹性）</p></div>
   <div class="wide xl">
     <table class="dt">
+      <caption class="visually-hidden">明日计划 · 四维评分</caption>
       <thead><tr><th>标的</th><th>题材</th><th>地位</th><th>合力</th><th>韧性</th><th>综合</th><th>弹性</th><th>评级 → 行动</th></tr></thead>
       <tbody id="scores-tbody"></tbody>
     </table>
@@ -169,53 +183,57 @@
   <div class="prose"><p class="sub-h" style="margin-top:30px">关注标的快评（5.6 结论）</p></div>
   <div class="wide xl">
     <table class="dt">
+      <caption class="visually-hidden">明日计划 · 关注标的快评</caption>
       <thead><tr><th>标的</th><th>判定</th><th>一句话</th></tr></thead>
       <tbody id="watch-tbody"></tbody>
     </table>
   </div>
 </section>
 
-<!-- ═══ 板块 6 · 特殊提醒 ═══ -->
-<section id="sec-risk" class="band">
+<!-- ═══ 板块 6 · 风险提示 ═══ -->
+<section id="sec-risk" class="band" data-name="风险提示">
   <div class="prose">
-    <p class="sec-no">板块 6 · 特殊提醒</p>
-    <h2 id="risk-h">特殊提醒</h2>
+    <p class="sec-no">板块 6 · 风险提示</p>
+    <h2 id="risk-h">风险提示</h2>
     <p class="dek" id="risk-dek"></p>
   </div>
   <div class="wide xl">
     <table class="dt">
+      <caption class="visually-hidden">风险提示 · 触发与证伪</caption>
       <thead><tr><th>级别</th><th>风险</th><th>触发 / 证伪</th><th>操作约束</th></tr></thead>
       <tbody id="risks-tbody"></tbody>
     </table>
   </div>
 </section>
 
-<!-- ═══ 板块 7 · 自建股池 ═══ -->
-<section id="sec-pool" class="band">
+<!-- ═══ 板块 7 · 自选池 ═══ -->
+<section id="sec-pool" class="band" data-name="自选池">
   <div class="prose">
-    <p class="sec-no">板块 7 · 自建股池</p>
+    <p class="sec-no">板块 7 · 自选池</p>
     <h2>自选池 · 条件单优先</h2>
     <p class="dek" id="pool-dek"></p>
   </div>
   <div class="wide xl">
     <table class="dt">
-      <thead><tr><th>方向</th><th>标的</th><th>状态</th><th>结论</th></tr></thead>
+      <caption class="visually-hidden">自选池 · 条件单优先（方向/标的/状态/技术位/今日表现）</caption>
+      <thead><tr><th>方向</th><th>标的</th><th>状态</th><th>技术位</th><th>今日表现</th></tr></thead>
       <tbody id="pool-tbody"></tbody>
     </table>
     <div class="note-box" style="margin-top:22px"><p><b>注意力体检结论。</b><span id="pool-check"></span></p></div>
   </div>
 </section>
 
-<!-- ═══ 板块 8 · PatternComboGate 形态信号 ═══ -->
-<section id="sec-pattern" class="band">
+<!-- ═══ 板块 8 · 形态组合信号 形态信号 ═══ -->
+<section id="sec-pattern" class="band" data-name="形态组合信号">
   <div class="prose">
-    <p class="sec-no">板块 8 · PatternComboGate</p>
+    <p class="sec-no">板块 8 · 形态组合信号</p>
     <h2 id="pg-title">形态组合信号 · Top10</h2>
     <p class="dek" id="pg-dek">读取中…</p>
   </div>
   <div class="wide xl">
     <div class="note-box" id="pg-note"></div>
     <table class="dt">
+      <caption class="visually-hidden">形态信号 · Top10</caption>
       <thead>
         <tr>
           <th>#</th><th>标的</th><th>评分</th><th>参考概率</th>
@@ -230,7 +248,7 @@
 </section>
 
 <!-- ═══ 板块 9 · 新闻快讯 ═══ -->
-<section id="sec-news" class="band">
+<section id="sec-news" class="band" data-name="新闻快讯">
   <div class="prose">
     <p class="sec-no">板块 9 · 新闻快讯</p>
     <h2>政策 · 外围 · 事件 · 风险</h2>
@@ -249,14 +267,14 @@
 </section>
 
 <!-- ═══ 来源 ═══ -->
-<footer id="sec-sources">
+<footer id="sec-sources" data-name="来源与方法">
   <div class="prose">
     <p class="sec-no">来源与方法 · Sources &amp; method</p>
     <h2>方法、纪律与来源</h2>
     <div class="note-box">
-      <p><b>证据分级。</b>公司/监管一手 &gt; 官方/行业 &gt; 媒体转引 &gt; 数据商汇编；推算项显式标注 [推算]（等效板数 = R4 口径自算）。</p>
+      <p><b>证据分级。</b>公司/监管一手 &gt; 官方/行业 &gt; 媒体转引 &gt; 数据商汇编；推算项显式标注 [推算]（等效板数为自算口径）。</p>
       <p><b>来源类别（均带日期）。</b><span class="src-cat company">公司/监管一手</span> <span class="src-cat industry">官方/行业</span> <span class="src-cat broker">媒体转引</span> <span class="src-cat kimi">数据商汇编</span></p>
-      <p><b>取数纪律。</b>免费公开源优先（东财双池/龙虎榜＋新浪日K/资金流/国际期货＋公开收评）→ iFinD → Wind 兜底控成本；关键定性双源交叉；晋级率经 R35 四步核验；PCB 家数按 R34 题材口径归类；本页为结论版，完整推演见 Markdown 报告（Prompt v4.14）。</p>
+      <p><b>取数纪律。</b>免费公开源优先（东财双池/龙虎榜＋新浪日K/资金流/国际期货＋公开收评）→ iFinD → Wind 兜底控成本；关键定性双源交叉；晋级率经四步核验；PCB 家数按题材口径归类；本页为结论版，完整推演见 Markdown 报告。</p>
     </div>
   </div>
   <div class="wide xl">
@@ -285,6 +303,15 @@
 // 全页由 data.js 驱动（自动引擎）
 (() => {
   const D = window.RPT || {};
+  // 设计审计 E5：data.js 缺失/为空时给出明确提示，而不是让整页堆满「—」
+  if (!D || !D.meta) {
+    const b = document.getElementById("data-missing");
+    if (b) {
+      b.hidden = false;
+      b.textContent = "数据文件缺失或为空，请先运行 engine/run_daily.py 生成 js/data.js";
+    }
+    return;
+  }
   const $ = (id) => document.getElementById(id);
   const fill = (id, html) => { const el = $(id); if (el) el.innerHTML = html || ""; };
   const setText = (id, t) => { const el = $(id); if (el && t != null) el.textContent = t; };
@@ -317,7 +344,7 @@
     `；红盘率 ${B.red_pct ?? P.redPct ?? "—"}%（涨 ${B.up ?? "—"} / 跌 ${B.down ?? "—"}）。` +
     `状态 ${D.regime || "—"}，仓位锚 ${D.posAnchor ?? "—"} 成。计划日 ${planDay}。`
   );
-  setText("cover-anchor", `右侧画布 = ${day} 连板阶梯 · ${ladNote} · 炸板 ${zbN} · 跌停 ${dtN}`);
+  setText("cover-anchor", `连板图 = ${day} 连板阶梯 · ${ladNote} · 炸板 ${zbN} · 跌停 ${dtN}`);
 
   // 速览
   setText("glance-title", `一句话定性：${(D.cover && D.cover.title) || "—"}`);
@@ -340,13 +367,13 @@
     { v: `${B.red_pct ?? P.redPct ?? "—"}%`, k: `红盘率（涨 ${B.up ?? "—"} / 跌 ${B.down ?? "—"}${B.flat != null ? ` / 平 ${B.flat}` : ""}）${breadthIncomplete ? " ⚠样本不完整" : ""}`, drill: `红盘率|${B.red_pct}%|涨 ${B.up} / 跌 ${B.down} / 平 ${B.flat}；样本 ${B.fetched ?? "—"} / 完整 ${B.complete ?? "—"}|东财全市场分页 · ${day}` },
   ];
   fill("metric-strip", metrics.map(m =>
-    `<div class="m" data-drill="${esc(m.drill)}"><div class="v">${m.v}</div><div class="k">${m.k}</div></div>`
+    `<button type="button" class="m" data-drill="${esc(m.drill)}"><span class="v">${m.v}</span><span class="k">${m.k}</span></button>`
   ).join(""));
   // rebind drill
   document.querySelectorAll("#metric-strip [data-drill]").forEach(el =>
     el.addEventListener("click", e => {
       const [title, value, sub, source] = el.dataset.drill.split("|");
-      U.showDrill({ title, value, sub, source, x: e.clientX, y: e.clientY });
+      U.showDrill({ title, value, sub, source, x: e.clientX, y: e.clientY, trigger: el });
     }));
 
   const MR = D.macroRegime || {};
@@ -364,7 +391,25 @@
     `。结构以 B/C 条件单为主，不追竞价、不集中。`
   );
   const bans = D.bans || [];
-  setText("ban-note", bans.length ? `不做什么：${bans.slice(0, 5).join(" · ")}${bans.length>5?" …":""}` : "");
+  const banFull = bans.length ? `不做什么：${bans.join(" · ")}` : "";
+  const banShort = bans.length ? `不做什么：${bans.slice(0, 5).join(" · ")}${bans.length > 5 ? " …" : ""}` : "";
+  (function () {
+    const el = $("ban-note");
+    if (!el) return;
+    if (banFull.length > 90 && bans.length > 1) {
+      el.innerHTML = '<span class="ban-text"></span><button type="button" class="expand" aria-expanded="false">展开全文</button>';
+      const txt = el.querySelector(".ban-text"), btn = el.querySelector(".expand");
+      txt.textContent = banShort;
+      btn.onclick = () => {
+        const open = btn.getAttribute("aria-expanded") === "true";
+        txt.textContent = open ? banShort : banFull;
+        btn.setAttribute("aria-expanded", String(!open));
+        btn.textContent = open ? "展开全文" : "收起";
+      };
+    } else {
+      el.textContent = banFull;
+    }
+  })();
   const line0 = (D.lines && D.lines[0]) || {};
   setText("watch-note",
     `第一观察：主线候选「${line0.name || "—"}」${line0.stage || ""}；${(D.branches&&D.branches[0]&&D.branches[0].cond) || "竞价再确认"}。`
@@ -435,20 +480,23 @@
   // 表格
   fill("lines-tbody", (D.lines||[]).map(l =>
     `<tr${l.tone === "hot" ? ' class="hl"' : ""}><td><span class="lv ${l.tone||"mute"}">${l.lv}</span></td><td><b>${l.name}</b></td><td>${l.stage}</td><td>${l.act}</td></tr>`).join("") ||
-    `<tr><td colspan="4" class="muted">未识别到板块主线（题材归类为空）</td></tr>`);
-  fill("leaders-tbody", (D.leaders||[]).map(l =>
-    `<tr${l.tone === "hot" ? ' class="hl"' : ""}><td><b>${l.name}</b></td><td class="num">${l.h}</td><td>${l.verdict}</td></tr>`).join("") ||
-    `<tr><td colspan="3" class="muted">当日无连板梯队（涨停池为空）</td></tr>`);
+    `<tr class="placeholder"><td colspan="4" class="muted">未识别到板块主线（题材归类为空）</td></tr>`);
+  fill("leaders-tbody", (D.leaders||[]).map(l => {
+    const seal = (l.sealFund != null && !isNaN(l.sealFund)) ? Number(l.sealFund).toFixed(2) : "—";
+    const turn = (l.turnover != null && !isNaN(l.turnover)) ? Number(l.turnover).toFixed(2) : "—";
+    return `<tr${l.tone === "hot" ? ' class="hl"' : ""}><td><b>${l.name}</b></td><td>${l.sector || "—"}</td><td class="num">${l.h}</td><td class="num">${seal}</td><td class="num">${turn}</td><td>${l.risk || "—"}</td></tr>`;
+  }).join("") ||
+    `<tr class="placeholder"><td colspan="6" class="muted">当日无连板梯队（涨停池为空）</td></tr>`);
   fill("plan1-tbody", (D.plan1||[]).map(p =>
     `<tr><td><b>${p.name}</b></td><td>${p.path}：${p.trig}</td><td>${p.kill}</td><td class="num">${p.pos}</td><td>${p.stop}</td></tr>`).join("") ||
-    `<tr><td colspan="5" class="muted">自动模式未生成核心趋势仓（可人工补充 plan1）</td></tr>`);
+    `<tr class="placeholder"><td colspan="5" class="muted">引擎未生成核心趋势仓，需人工补充</td></tr>`);
   fill("plan2-tbody", (D.plan2||[]).map(p =>
     `<tr><td class="num">${p.pri}</td><td><b>${p.name}</b></td><td>${p.path}：${p.trig}</td><td>${p.kill}</td><td class="num">${p.pos}</td><td>${p.stop}</td></tr>`).join("") ||
-    `<tr><td colspan="6" class="muted">自动模式未生成隔夜套利条件单（可人工补充 plan2）</td></tr>`);
+    `<tr class="placeholder"><td colspan="6" class="muted">引擎未生成隔夜套利条件单，需人工补充</td></tr>`);
   fill("bans-ol", (D.bans||[]).map(b => `<li>${b}</li>`).join(""));
   fill("scen-tbody", (D.scenarios||[]).map(s =>
     `<tr><td><b>${s.s}</b></td><td>${s.t}</td><td>${s.a}</td></tr>`).join("") ||
-    `<tr><td colspan="3" class="muted">自动模式未生成应变矩阵（可人工补充 scenarios）</td></tr>`);
+    `<tr class="placeholder"><td colspan="3" class="muted">引擎未生成应变矩阵，需人工补充</td></tr>`);
   fill("scores-tbody", (D.scores||[]).map(s => {
     // 兼容 think_matrix 字段（theme/pos/flow/hold/grade/elastic）与旧字段（t/d/h/r/g/e）
     const t = s.theme ?? s.t ?? "—";
@@ -458,23 +506,27 @@
     const g = s.grade ?? s.g ?? "—";
     const e = s.elastic ?? s.e ?? "—";
     return `<tr><td><b>${s.name}</b></td><td class="num">${t}</td><td class="num">${d}</td><td class="num">${h}</td><td class="num">${r}</td><td class="num">${g}</td><td class="num">${e}</td><td>${s.act}</td></tr>`;
-  }).join("") || `<tr><td colspan="8" class="muted">自动模式未生成四维评分</td></tr>`);
+  }).join("") || `<tr class="placeholder"><td colspan="8" class="muted">引擎未生成四维评分，需人工补充</td></tr>`);
   fill("watch-tbody", (D.watch||[]).map(w =>
     `<tr><td><b>${w.name}</b></td><td>${w.d}</td><td>${w.note}</td></tr>`).join("") ||
-    `<tr><td colspan="3" class="muted">无关注标的快评（本地行情缺该标的）</td></tr>`);
+    `<tr class="placeholder"><td colspan="3" class="muted">无关注标的快评（本地行情缺该标的）</td></tr>`);
   fill("risks-tbody", (D.risks||[]).map(r =>
     `<tr><td class="num">${r.lv}</td><td><b>${r.name}</b></td><td>${r.t}</td><td>${r.a}</td></tr>`).join("") ||
-    `<tr><td colspan="4" class="muted">自动模式未生成风险项</td></tr>`);
-  fill("pool-tbody", (D.pool||[]).map(p =>
-    `<tr><td>${p.dir}</td><td><b>${p.name}</b></td><td>${p.st}</td><td>${p.note}</td></tr>`).join("") ||
-    `<tr><td colspan="4" class="muted">自选池为空</td></tr>`);
+    `<tr class="placeholder"><td colspan="4" class="muted">自动模式未生成风险项</td></tr>`);
+  const watchByName = {};
+  (D.watch || []).forEach(w => { watchByName[w.name] = w; });
+  fill("pool-tbody", (D.pool||[]).map(p => {
+    const w = watchByName[p.name] || {};
+    return `<tr><td>${p.dir}</td><td><b>${p.name}</b></td><td>${p.st}</td><td>${w.d || "—"}</td><td>${w.note || "—"}</td></tr>`;
+  }).join("") ||
+    `<tr class="placeholder"><td colspan="5" class="muted">自选池为空</td></tr>`);
 
   const pd = D.poolDelta || {};
   if ($("pool-dek")) $("pool-dek").textContent =
     [pd.out, pd.keep, pd.add].filter(Boolean).join("；") + "。";
   if ($("pool-check")) $("pool-check").textContent = pd.check || "";
 
-  // PatternComboGate
+  // 形态组合信号（PatternComboGate）
   const pg = D.patternGate || {};
   if ($("pg-title") && pg.signalDate) {
     $("pg-title").textContent = `形态组合信号 · Top${(pg.items||[]).length}`;
@@ -503,7 +555,7 @@
       <td>${combos || "—"}</td>
       <td class="num">${pct}</td>
     </tr>`;
-  }).join("") || `<tr><td colspan="6" class="muted">暂无</td></tr>`);
+  }).join("") || `<tr class="placeholder"><td colspan="6" class="muted">暂无</td></tr>`);
   fill("pg-combos", (pg.comboList || []).map(c =>
     `<div class="src-row">
       <span class="s-fact"><b>${c.name}</b>　命中 ${c.hits} 次 · 后5日均 ${(c.mean5d * 100).toFixed(2)}%</span>
@@ -515,8 +567,8 @@
   const renderNews = (id, items) => {
     fill(id, (items||[]).map(n =>
       `<div class="src-row">
-        <span class="s-fact"><b>${(n.time||"").slice(5,16)}</b>　${n.title||""}</span>
-        <span class="s-cite"><span class="src-cat kimi">${n.source||""}</span>${(n.summary||"").slice(0,120)}</span>
+        <span class="s-fact"><b>${n.time ? n.time.slice(5,16) : "—"}</b>　${n.title||""}</span>
+        <span class="s-cite"><span class="src-cat kimi">${n.source||""}</span>${n.summary ? `${(n.summary||"").slice(0,120)}` : ""}</span>
       </div>`).join("") || `<p class="muted">暂无</p>`);
   };
   renderNews("news-policy", news.policy);
@@ -530,6 +582,50 @@
     $("colophon").textContent =
       `以上为盘面数据自动汇总与策略规则骨架，非投资建议。\n复盘日 ${day} · 计划日 ${planDay} · 生成 ${(D.meta&&D.meta.genTime)||""}\n行情：qlib_bin/Parquet/DuckDB + 东财涨停池 · 新闻：新浪7×24/东财`;
   }
+
+  // ── 设计审计 R2/R6：命名单一来源 + 空表隐藏表头 ──────────────────────
+  (function sectionNames() {
+    const secs = document.querySelectorAll("section[data-name], footer[data-name]");
+    const nav = document.getElementById("sec-nav");
+    const chips = document.querySelector(".cover-chips");
+    if (nav) {
+      const inner = nav.querySelector(".sec-nav-inner");
+      const brand = inner && inner.querySelector(".sec-nav-brand");
+      secs.forEach(sec => {
+        const name = sec.getAttribute("data-name");
+        if (!name) return;
+        const id = "#" + sec.id;
+        // 吸顶导航
+        const a = Array.from(nav.querySelectorAll("a")).find(x => x.getAttribute("href") === id);
+        if (a) a.textContent = name;
+        // 封面 chips
+        if (chips) {
+          const c = Array.from(chips.querySelectorAll("button")).find(x => x.getAttribute("data-goto") === id);
+          if (c) c.textContent = name;
+        }
+        // 板块编号
+        const no = sec.querySelector(".sec-no");
+        if (no) {
+          const idx = Array.from(secs).indexOf(sec) + 1;
+          no.textContent = `板块 ${idx} · ${name}`;
+        }
+      });
+    }
+  })();
+
+  (function collapseEmptyTables() {
+    document.querySelectorAll("table.dt").forEach(t => {
+      const tb = t.querySelector("tbody"), th = t.querySelector("thead");
+      if (!tb || !th) return;
+      const rows = Array.from(tb.rows);
+      const empty = rows.length === 0 || rows.every(r => r.classList.contains("placeholder"));
+      th.style.display = empty ? "none" : "";
+      // 空表时不显示 caption，避免读屏用户听到一张空表
+      const cap = t.querySelector("caption");
+      if (cap) cap.style.display = empty ? "none" : "";
+    });
+  })();
+
 })();
 </script>
 <script src="js/main.js"></script>

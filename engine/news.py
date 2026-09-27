@@ -119,7 +119,7 @@ def eastmoney_flash(limit: int = 30) -> list[dict]:
                 continue
             out.append(
                 {
-                    "time": it.get("showtime") or it.get("display_time") or "",
+                    "time": (it.get("showtime") or it.get("display_time") or it.get("notice_date") or it.get("pubtime") or it.get("createTime") or it.get("showTime") or ""),
                     "title": title[:60],
                     "summary": digest[:200],
                     "source": "东财快讯",
@@ -272,6 +272,74 @@ def fetch_all_news(date: str | None = None, per_source: int = 30) -> dict:
         "sources_ok": ok,
         "count": len(uniq),
     }
+
+
+
+
+# ── 设计审计修复：摘要回退 / 同主题去重 / 日期过滤 ─────────────────────────
+# 审计发现（output/design-audit/AUDIT.md R5）：
+#   1) 源数据无独立摘要时 summary 会等于 title，前端把标题渲染两遍
+#   2) 同主题条目（如连续多条加拿大央行纪要）标题前 12 字相同却未合并
+#   3) 复盘日之后的快讯（如 09-17）出现在 09-16 的复盘页上，与页头「数据截至」冲突
+_CATS = ("policy", "global", "event", "risk")
+
+
+def _title_key(title: str) -> str:
+    """归一化标题作去重键：去标点与空白，取前 12 字。"""
+    t = re.sub(r"[^0-9A-Za-z\u4e00-\u9fa5]", "", title or "")
+    return t[:12]
+
+
+def _news_date(text: str, year: str) -> str | None:
+    """从 time 字符串抽出 YYYY-MM-DD；无年份时用复盘日的年份补齐。"""
+    m = re.search(r"(\d{4})-(\d{2})-(\d{2})", text or "")
+    if m:
+        return m.group(0)
+    m = re.search(r"(\d{2})-(\d{2})", text or "")
+    if m and year:
+        return f"{year}-{m.group(1)}-{m.group(2)}"
+    return None
+
+
+def clean_pack(pack: dict, review_day: str, allow_late: bool = False) -> dict:
+    """就地清洗 news pack，返回同一个 dict。
+
+    - summary 与 title 相同（含仅有空白差异）时置空，前端据此不渲染摘要行
+    - 同一分类内按 _title_key 去重，保留最早出现的一条
+    - time 晚于 review_day 的条目默认剔除（复盘页只呈现复盘日及以前的信息）；
+      allow_late=True 时保留但给 summary 打上「复盘日后」标记。
+      这个开关用于**历史日重跑**：新闻源只给当天快讯，若复盘日不是今天，
+      严格过滤会把整个板块清空——诚实的做法是保留并标注，而不是静默展示过期口径。
+    """
+    year = str(review_day or "")[:4]
+    norm_title = lambda s: re.sub(r"\s+", "", s or "")
+    for cat in _CATS:
+        items = pack.get(cat) or []
+        # 先按时间升序排序再去重，才能落实「保留最早一条」——
+        # 若源列表是最新在前，直接按列表顺序取首条会把最新那条留下。
+        items = sorted(items, key=lambda x: str(x.get("time") or ""))
+        out, seen = [], set()
+        for it in items:
+            ttl = norm_title(it.get("title"))
+            if not ttl:
+                continue
+            sm = norm_title(it.get("summary"))
+            it = dict(it)
+            it["summary"] = "" if (not sm or sm == ttl) else it.get("summary")
+            d = _news_date(it.get("time") or "", year)
+            if review_day and d and d > str(review_day):
+                if not allow_late:
+                    continue
+                it["summary"] = ("【复盘日后】" + (it.get("summary") or "")).strip()
+            key = _title_key(it.get("title"))
+            if key and key in seen:
+                continue
+            if key:
+                seen.add(key)
+            out.append(it)
+        pack[cat] = out
+    pack["count"] = sum(len(pack.get(c) or []) for c in _CATS)
+    return pack
 
 
 if __name__ == "__main__":

@@ -36,7 +36,7 @@
   document.querySelectorAll("[data-drill]").forEach(el =>
     el.addEventListener("click", e => {
       const [title, value, sub, source] = el.dataset.drill.split("|");
-      U.showDrill({ title, value, sub, source, x: e.clientX, y: e.clientY });
+      U.showDrill({ title, value, sub, source, x: e.clientX, y: e.clientY, trigger: el });
     }));
 
   // sticky 章节导航：滚过封面后显示 + 高亮当前章节

@@ -56,7 +56,8 @@ def cache_path(date: str) -> Path:
 
 # 结构版本：bump 后旧缓存自动失效重取。
 # 2 → breadth 增加 amount_yi / fetched / complete（成交额与涨跌家数口径修正）
-DAY_CACHE_VERSION = 2
+DAY_CACHE_VERSION = 3
+# 3 → 涨停池 fund 单位由 /1e4（误标为亿）改为 /1e8；旧缓存里的数值是错的口径，必须失效
 
 
 # 完整日缓存必须含有的字段（旧结构没有 fullDay 标记时用它来判定）
@@ -97,6 +98,18 @@ def load_cache(date: str, require_full: bool = False, allow_stale: bool = False)
         b = d.get("breadth")
         if isinstance(b, dict):
             d["breadth"] = {**b, "complete": False}
+        # R4 残留路径：缓存版本 2 里的 zt[].fund 是 /1e4 旧口径（误标为亿），
+        # 离线沿用时必须折算，否则会把错单位的封单当正确值发到页面上。
+        # 只在能确定版本时折算；其它版本宁可置 None（显示 —），也不猜。
+        if d.get("cacheVersion") == 2:
+            for row in d.get("zt") or []:
+                try:
+                    row["fund"] = round(float(row.get("fund") or 0) / 1e4, 2)
+                except (TypeError, ValueError):
+                    row["fund"] = None
+        else:
+            for row in d.get("zt") or []:
+                row["fund"] = None
     return d
 
 
@@ -171,6 +184,47 @@ def closes_for_yest_zt(yest_zt: list[dict], limit: int = 80) -> dict:
         return {}
 
 
+def _breadth_cite(ctx: dict, date: str) -> str:
+    """广度/成交的来源日期必须是**实际抓取日**。
+
+    设计审计延伸：run_daily --date 重跑历史日时，东财广度/成交接口返回的是
+    抓取当天的数据而非复盘日数据；来源行若仍写复盘日就是误导。
+    两者一致时直接写复盘日；不一致时明确标出抓取日。
+    """
+    fd = ctx.get("breadth_fetch_date") or date
+    return fd if fd == str(date) else f"{fd}（抓取日；非复盘日实测）"
+
+def _enrich_leaders(leaders: list[dict], zt_rows: list[dict]) -> None:
+    """按名称把涨停池的结构化字段回填到 leaders（就地修改）。
+
+    设计审计 R3/T4：think_matrix 会重建 leaders，只留 name/h/verdict/tone；
+    表格需要板块/封单/成交/风险四列，必须在这里补回。
+    封单单位已经是亿（eastmoney.yi / 1e8），不再换算。
+    """
+    if not leaders:
+        return
+    by_name = {z.get("name"): z for z in (zt_rows or [])}
+    top_name = None
+    best = -1
+    for L in leaders:
+        z = by_name.get(L.get("name"))
+        if z and int(z.get("lbc") or 0) > best:
+            best = int(z.get("lbc") or 0)
+            top_name = L.get("name")
+    for L in leaders:
+        z = by_name.get(L.get("name"))
+        if not z:
+            continue
+        seal = round(float(z.get("fund") or 0), 2)
+        turn = round(float(z.get("amount") or 0), 2)
+        lbc = int(z.get("lbc") or 1)
+        L["sector"] = z.get("hybk") or M.classify_sector(L.get("name") or "")
+        L["lbc"] = lbc
+        L["sealFund"] = seal
+        L["turnover"] = turn
+        L["risk"] = M.leader_risk(lbc, seal, turn, is_top=(L.get("name") == top_name))
+
+
 def build_narrative(date: str, plan_date: str, ctx: dict) -> dict:
     """数据驱动的文案骨架（可人工覆写）。"""
     zt_n, dt_n, zb_n = ctx["zt_n"], ctx["dt_n"], ctx["zb_n"]
@@ -231,28 +285,42 @@ def build_narrative(date: str, plan_date: str, ctx: dict) -> dict:
     )
 
     # 龙头：最高板 + 涨停封单额前三 + 涨停家数最多板块内身位股
+    # 设计审计 R3：表格里原「结论」列 5 行全是同一句模板，无法区分个股。
+    # 这里改为输出结构化字段（板块/封单/成交/风险），前端按字段渲染列。
+    def _leader_fields(z, is_top=False):
+        seal = round(float(z.get("fund") or 0), 2)   # eastmoney.zt_pool 已换算为亿
+        turn = round(float(z.get("amount") or 0), 2)  # 同上
+        lbc = int(z.get("lbc") or 1)
+        return {
+            "sector": z.get("hybk") or M.classify_sector(z.get("name") or ""),
+            "lbc": lbc,
+            "sealFund": seal,
+            "turnover": turn,
+            "risk": M.leader_risk(lbc, seal, turn, is_top=is_top),
+        }
+
+    zt_by_name = {z.get("name"): z for z in (ctx["zt"] or [])}
     leaders = []
     if lad.get("highs"):
         h0 = lad["highs"][0]
-        leaders.append(
-            {
-                "name": h0["name"],
-                "h": f"{h0['lbc']} 板",
-                "verdict": f"名义最高连板 {h0['lbc']}；监管/断板信号需人工复核，自动模式不给出接力买点",
-                "tone": "mid",
-            }
-        )
+        src = zt_by_name.get(h0["name"]) or {}
+        leaders.append({
+            "name": h0["name"],
+            "h": f"{h0['lbc']} 板",
+            **_leader_fields({**src, "lbc": h0["lbc"], "name": h0["name"]}, is_top=True),
+            "verdict": f"名义最高连板 {h0['lbc']}；监管/断板信号需人工复核，自动模式不给出接力买点",
+            "tone": "mid",
+        })
     for x in sorted(ctx["zt"], key=lambda z: -(z.get("lbc") or 0))[:4]:
         if leaders and x["name"] == leaders[0]["name"]:
             continue
-        leaders.append(
-            {
-                "name": x["name"],
-                "h": f"{x.get('lbc',1)} 板",
-                "verdict": f"板块 {x.get('hybk') or M.classify_sector(x['name'])}；封单 {x.get('fund') or 0:.2f} 亿（自动）",
-                "tone": "hot" if (x.get("lbc") or 0) >= 2 else "mid",
-            }
-        )
+        leaders.append({
+            "name": x["name"],
+            "h": f"{x.get('lbc',1)} 板",
+            **_leader_fields(x),
+            "verdict": f"板块 {x.get('hybk') or M.classify_sector(x['name'])}；封单 {x.get('fund') or 0:.2f} 亿（自动）",
+            "tone": "hot" if (x.get("lbc") or 0) >= 2 else "mid",
+        })
 
     # 计划：自选池里今日有涨停/大涨的 → 生成 C 回踩条件单
     plan2 = []
@@ -366,8 +434,8 @@ def build_narrative(date: str, plan_date: str, ctx: dict) -> dict:
         {"id": "K2", "cat": "kimi", "fact": f"炸板 {zb_n} 家、炸板率 {ctx['zb_rate']}%", "cite": f"东财炸板池 · {date}"},
         {"id": "K3", "cat": "kimi", "fact": f"跌停 {dt_n} 家", "cite": f"东财跌停池 · {date}"},
         {"id": "K4", "cat": "kimi", "fact": f"晋级率 {rate}%（{ctx['promo']['num']}/{ctx['promo']['den']}）", "cite": f"涨停池两日交叉 · {date}"},
-        {"id": "K5", "cat": "kimi", "fact": f"沪指 {ctx['sh'].get('close')}（{ctx['sh'].get('pct')}%）；成交约 {ctx['amount_yi'] if ctx.get('amount_yi') is not None else '—'} 亿（口径 {ctx.get('amount_scope', '—')}）", "cite": f"{'东财全市场分页求和' if ctx.get('amount_scope') == '全A' else '东财指数（沪市）'} · {date}"},
-        {"id": "K6", "cat": "kimi", "fact": f"涨 {ctx['breadth'].get('up')} / 跌 {ctx['breadth'].get('down')} / 平 {ctx['breadth'].get('flat')}，红盘率 {ctx['breadth'].get('red_pct')}%（样本 {ctx['breadth'].get('fetched', '—')}，完整 {ctx['breadth'].get('complete', '—')}）", "cite": f"东财全市场 · {date}"},
+        {"id": "K5", "cat": "kimi", "fact": f"沪指 {ctx['sh'].get('close')}（{ctx['sh'].get('pct')}%）；成交约 {ctx['amount_yi'] if ctx.get('amount_yi') is not None else '—'} 亿（口径 {ctx.get('amount_scope', '—')}）", "cite": f"{'东财全市场分页求和' if ctx.get('amount_scope') == '全A' else '东财指数（沪市）'} · {_breadth_cite(ctx, date)}"},
+        {"id": "K6", "cat": "kimi", "fact": f"涨 {ctx['breadth'].get('up')} / 跌 {ctx['breadth'].get('down')} / 平 {ctx['breadth'].get('flat')}，红盘率 {ctx['breadth'].get('red_pct')}%（样本 {ctx['breadth'].get('fetched', '—')}，完整 {ctx['breadth'].get('complete', '—')}）", "cite": f"东财全市场 · {_breadth_cite(ctx, date)}"},
         {"id": "K8", "cat": "kimi", "fact": "题材归类：" + "、".join(f"{s['name']} {s['n']}" for s in ctx["sectors"][:6]), "cite": f"自动关键词归类 · {date}"},
         {"id": "L1", "cat": "local", "fact": f"本地行情 close/pct 宽表（近 320 日，约 5260 只）；广度/梯队/晋级可复算", "cite": "data/cache/*.parquet · DuckDB 查询"},
         {"id": "L2", "cat": "local", "fact": "全历史 qlib_bin（2000→数据截止），供因子与回测", "cite": "data/qlib_cn · investment_data release"},
@@ -440,6 +508,7 @@ def main() -> None:
     ap.add_argument("--offline", action="store_true", help="只用本地缓存")
     ap.add_argument("--force", action="store_true", help="忽略缓存重新拉取")
     ap.add_argument("--macro-refresh", type=int, default=0, help="1=强制重算宏观择时")
+    ap.add_argument("--allow-late-news", type=int, default=0, help="1=保留并标注晚于复盘日的快讯（默认剔除）")
     args = ap.parse_args()
 
     date = pick_review_day(args.date)
@@ -554,6 +623,13 @@ def main() -> None:
     # ── 新闻层 ──
     print("[news] 拉取政策/外围/事件快讯 ...")
     news_pack = NEWS.fetch_all_news(date, per_source=35)
+    # 设计审计 R5：摘要回退成标题会导致前端渲染两遍；同主题条目未合并；
+    # 复盘日之后的快讯与页头「数据截至」冲突。
+    # 设计审计 R5 / T3：默认严格剔除晚于复盘日的条目（spec 2.5）。
+    # 历史日重跑时新闻源只给当天快讯，严格过滤会让整个板块为空——这是诚实的结果
+    # （拿不到那天的快讯）。若确实需要看晚于复盘日的快讯，必须显式加 --allow-late-news，
+    # 此时条目会被标上「复盘日后」。不把「标注」当成满足了「剔除」的验收。
+    news_pack = NEWS.clean_pack(news_pack, date, allow_late=bool(getattr(args, "allow_late_news", 0)))
 
     # ── alpha 原料落库（资金流 + 板块情绪，供以后回测）──
     alpha_info = {}
@@ -641,6 +717,7 @@ def main() -> None:
         "amount_yi": amount_yi,
         "amount_delta_yi": amount_delta_yi,
         "amount_scope": amount_scope,
+        "breadth_fetch_date": time.strftime("%Y-%m-%d"),
         "sectors": sectors,
         "emotion": emotion,
         "regime": regime,
@@ -827,6 +904,12 @@ def main() -> None:
             nar["watch"] = new_watch
     except Exception as e:
         print(f"[watch-nap] skip: {e}")
+
+    # 设计审计 R3 / T4：think_matrix 在下面几行会用 roles["leader"] 重建 nar["leaders"]，
+    # 只保留 name/h/verdict/tone，结构化字段会被丢掉。因此在组装 payload 前
+    # 按名称从涨停池回填：板块 / 连板数 / 封单(亿) / 成交(亿) / 接力风险。
+    # 封单单位已修正为亿（eastmoney.yi），这里不再二次换算。
+    _enrich_leaders(nar.get("leaders") or [], ctx["zt"] or [])
 
     pools = {
         "zt": zt_n,

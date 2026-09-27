@@ -18,7 +18,7 @@ window.U = (() => {
   }
 
   const PAL = {
-    paper: "#ffffff", hi: "#f7f9fc", ink: "#051c2c", inkMd: "#42566a", inkLo: "#8595a6",
+    paper: "#ffffff", hi: "#f7f9fc", ink: "#051c2c", inkMd: "#42566a", inkLo: "#5a6676",
     line: "#dbe2ea", lineLo: "#eef1f6", red: "#2251ff", redHi: "#1233b8",
     blue: "#7a45c9", copper: "#b07a10", green: "#008a6d", gold: "#b07a10",
     neg: "#c22f4e", accent: "#2251ff", navy: "#051c2c",
@@ -32,25 +32,56 @@ window.U = (() => {
 
   const drill = document.getElementById("drill-card");
   let drillOpen = false;
-  function showDrill({ title, value, delta, sub, source, x, y }) {
-    drill.innerHTML = `<button class="d-close">✕</button>
+  // 设计审计 R9 / A2：把 drill 做成真正的对话框 —— 语义、Esc 关闭、焦点管理、
+  // 且不遮挡触发物（优先放在触发物右侧，越界时改下方）。
+  let drillReturnFocus = null;
+
+  function showDrill({ title, value, delta, sub, source, x, y, trigger }) {
+    drill.innerHTML = `<button class="d-close" aria-label="关闭">✕</button>
       <div class="d-title">${title}</div>
       <div class="d-val">${value}${delta != null ? ` <span class="${delta >= 0 ? "pos" : "neg"}" style="font-size:15px">${fmt.pct(delta)}</span>` : ""}</div>
       ${sub ? `<div class="d-sub">${sub}</div>` : ""}
       ${source ? `<div class="d-src">Source · ${source}</div>` : ""}`;
+    drill.setAttribute("role", "dialog");
+    drill.setAttribute("aria-modal", "true");
+    drill.setAttribute("aria-label", String(title || "详情"));
     drill.hidden = false; drillOpen = true;
+    drillReturnFocus = trigger || document.activeElement;
     const r = drill.getBoundingClientRect();
-    let left = clamp(x + 14, 8, window.innerWidth - r.width - 8);
-    let top = clamp(y - r.height - 14, 8, window.innerHeight - r.height - 8);
-    if (y - r.height - 14 < 8) top = clamp(y + 18, 8, window.innerHeight - r.height - 8);
+    const trg = trigger ? trigger.getBoundingClientRect() : null;
+    // 优先右侧；越界则改下方；再越界回退到点击点
+    let left, top;
+    if (trg && trg.right + 12 + r.width < window.innerWidth - 8) {
+      left = trg.right + 12;
+      top = clamp(trg.top, 8, window.innerHeight - r.height - 8);
+    } else if (trg && trg.bottom + 12 + r.height < window.innerHeight - 8) {
+      left = clamp(trg.left, 8, window.innerWidth - r.width - 8);
+      top = trg.bottom + 12;
+    } else {
+      left = clamp(x + 14, 8, window.innerWidth - r.width - 8);
+      top = clamp(y - r.height - 14, 8, window.innerHeight - r.height - 8);
+      if (y - r.height - 14 < 8) top = clamp(y + 18, 8, window.innerHeight - r.height - 8);
+    }
     drill.style.left = left + "px"; drill.style.top = top + "px";
-    drill.querySelector(".d-close").onclick = hideDrill;
+    const closeBtn = drill.querySelector(".d-close");
+    closeBtn.onclick = () => hideDrill();
+    closeBtn.focus();
   }
-  function hideDrill() { drill.hidden = true; drillOpen = false; }
+  function hideDrill() {
+    if (!drillOpen) return;
+    drill.hidden = true; drillOpen = false;
+    if (drillReturnFocus && typeof drillReturnFocus.focus === "function") {
+      try { drillReturnFocus.focus(); } catch (e) { /* 元素可能已被移除 */ }
+    }
+    drillReturnFocus = null;
+  }
   document.addEventListener("click", e => {
     if (drillOpen && !drill.contains(e.target)) {
       if (!e.target.closest("[data-drill-keep]")) hideDrill();
     }
+  }, true);
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && drillOpen) { e.preventDefault(); hideDrill(); }
   }, true);
 
   const tip = document.createElement("div");

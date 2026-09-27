@@ -25,7 +25,19 @@
     });
     const cv = document.createElement("canvas");
     cv.style.width = "100%"; cv.style.height = "300px"; cv.style.display = "block"; cv.style.cursor = "pointer";
+    // 设计审计 A1/A3：canvas 是纯绘制，读屏与键盘用户够不到 —— 补 role/tabindex/aria
+    // 并配一张视觉隐藏的文字表作为图表的等价物。
+    cv.setAttribute("role", "img");
+    cv.setAttribute("tabindex", "0");
+    const dimsTitle = (D.dims || []).map(d => `${d.name} ${d.s}/${d.w}`).join("，");
+    cv.setAttribute("aria-label", `情绪五维分解：${dimsTitle}`);
     body.appendChild(cv);
+    const altWrap = document.createElement("div");
+    altWrap.className = "visually-hidden";
+    altWrap.innerHTML = `<table><caption>情绪五维分解</caption><thead><tr><th>维度</th><th>得分</th><th>满分</th></tr></thead><tbody>${
+      (D.dims || []).map(d => `<tr><td>${d.name}</td><td>${d.s}</td><td>${d.w}</td></tr>`).join("")
+    }</tbody></table>`;
+    body.appendChild(altWrap);
     const bd = U.bindCanvas(cv), ctx = bd.ctx;
     let W = 0, rows = [], played = REDUCE;
 
@@ -55,7 +67,7 @@
       ctx.font = `10.5px ${MONO}`; ctx.fillStyle = P.inkLo;
       const yst = D.score.yesterday;
       ctx.fillText(
-        yst == null ? "昨日 —（未接缓存）" : `昨日 ${yst} · ${D.score.today - yst >= 0 ? "+" : ""}${D.score.today - yst}`,
+        yst == null ? "昨日 无缓存" : `昨日 ${yst} · ${D.score.today - yst >= 0 ? "+" : ""}${D.score.today - yst}`,
         px, 116,
       );
       ctx.fillStyle = P.red; ctx.font = `700 12px ${MONO}`;
@@ -79,7 +91,7 @@
     cv.addEventListener("click", e => {
       const r = cv.getBoundingClientRect(), y = e.clientY - r.top;
       const row = rows.find(rr => y >= rr.y && y <= rr.y + rr.h);
-      if (row) U.showDrill({ title: `情绪五维 · ${row.d.name}`, value: `${row.d.s} / ${row.d.w}`, sub: row.d.note, source: `engine/metrics.py 规则自算 · ${day}`, x: e.clientX, y: e.clientY });
+      if (row) U.showDrill({ title: `情绪五维 · ${row.d.name}`, value: `${row.d.s} / ${row.d.w}`, sub: row.d.note, source: `engine/metrics.py 规则自算 · ${day}`, x: e.clientX, y: e.clientY, trigger: cv });
     });
     let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(fitDraw, 180); });
     fitDraw();

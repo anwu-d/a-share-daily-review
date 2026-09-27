@@ -101,7 +101,7 @@
     const firstRows = Math.ceil(D.ladder.first / firstCols);
     const estRows = firstRows + 4;
     const scH = (stage.h * 0.82) / (estRows * 15.5 + 40);
-    let sc = U.clamp(Math.min(scW, scH), isMobile ? 0.34 : 0.55, isMobile ? 0.55 : 1.35);
+    let sc = U.clamp(Math.min(scW, scH), isMobile ? 0.42 : 0.55, isMobile ? 0.62 : 1.35);
 
     const pw = 13 * sc, ph = 9 * sc, gap = 3.2 * sc;
     const cell = pw + gap;
@@ -109,11 +109,15 @@
     const zbRows = Math.ceil(D.pools.zb / zbCols);
     const cw = zbCols * cell + 16 * sc;
     const stepGap = 18 * sc;
+    const topBoards = D.ladder.topBoards || 6;
+    // lv = 梯队层级（用于标签），rank = 台阶序位（用于高度）
+    // 设计审计 R8：高度必须按 rank 单调递增。若用 lv=topBoards，当最高板只有
+    // 1~3 板时会出现末级反而变矮、阶梯不再上升的失效；rank 恒为 1..4，保证上升。
     const stepDefs = [
-      { cols: firstCols, n: D.ladder.first },
-      { cols: 3, n: D.ladder.second },
-      { cols: 2, n: D.ladder.third },
-      { cols: 1, n: D.ladder.top },
+      { cols: firstCols, n: D.ladder.first, lv: 1, rank: 1 },
+      { cols: 3, n: D.ladder.second, lv: 2, rank: 2 },
+      { cols: 2, n: D.ladder.third, lv: 3, rank: 3 },
+      { cols: 1, n: D.ladder.top, lv: topBoards, rank: 4 },
     ];
     const stepWs = stepDefs.map(s => s.cols * cell + 16 * sc);
     const totalContentW =
@@ -145,21 +149,17 @@
     labels.push({ kind: "txt", x: cx0 + 1, y: gy + 44, s: `跌停 ${D.pools.dt}`, key: "down", neg: true });
     hits.push({ x: cx0 - 4, y: gy + 14, w: D.pools.dt * cell + 16, h: 40, key: "down" });
 
-    // ── 连板阶梯（台阶高度按行数，最大不超过舞台顶）──
-    const rowH = cell;
+    // ── 连板阶梯（台阶高度按梯队层级递增，见 R8）──
     const maxLift = stage.h * 0.72; // 地面线到舞台顶可用高度
-    const h1 = Math.min(firstRows * rowH + 6 * sc, maxLift * 0.42);
-    const h2 = Math.min(3 * rowH + 14 * sc, maxLift * 0.28);
-    const h3 = Math.min(2 * rowH + 22 * sc, maxLift * 0.36);
-    const h4 = Math.min(1 * rowH + 40 * sc, maxLift * 0.48);
-
+    // 设计审计 R8：台阶高度按「梯队层级」递增（1 板 < 2 板 < 3 板 < 最高板），
+    // 让「连板阶梯」从左到右真正上升；此前按方块行数算高度，77 个首板会把
+    // 1 板台阶顶得最高，视觉与名字相反。
     const LAST = 3;
-    const steps = [
-      { lv: 1, n: D.ladder.first, cols: firstCols, h: h1 },
-      { lv: 2, n: D.ladder.second, cols: 3, h: h2 },
-      { lv: 3, n: D.ladder.third, cols: 2, h: h3 },
-      { lv: 6, n: D.ladder.top, cols: 1, h: h4 },
-    ];
+    const stepH = maxLift / (topBoards + 2);
+    const steps = stepDefs.map(d => ({
+      ...d,
+      h: Math.max(26 * sc, 24 * sc + d.rank * stepH * 0.9),
+    }));
 
     let sx = ox + cw + 22 * sc;
     steps.forEach((st, si) => {
@@ -178,11 +178,12 @@
       if (isMobile && si === LAST) {
         labels.push({ kind: "txt", x: Math.min(sx + wStep, W - 6), y: Math.max(stage.y + 12, top - 12), s: lb, key, right: true });
       } else if (si === LAST) {
-        labels.push({ kind: "txt", x: labX(sx + 1), y: Math.max(stage.y + 12, top - 12), s: lb, key });
+        // 设计审计 R8：名称标签放在台阶顶下方，⚠ 监管警示画在上方，两者至少错开 14px
+        labels.push({ kind: "txt", x: labX(sx + 1), y: Math.max(stage.y + 30, top + 8), s: lb, key });
       } else {
         labels.push({ kind: "txt", x: labX(sx + 1), y: gy + 15, s: lb, key });
       }
-      const hitTop = si === LAST ? Math.max(stage.y, top - 28 * sc) : Math.max(stage.y, top - 22 * sc);
+      const hitTop = si === LAST ? Math.max(stage.y + 8, top - 40 * sc) : Math.max(stage.y, top - 22 * sc);
       hits.push({ x: sx - 4, y: hitTop, w: wStep + 8, h: gy - hitTop + 18, key });
       sx += wStep + stepGap;
     });
@@ -209,9 +210,11 @@
       ctx.strokeStyle = P.neg; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.2;
       ctx.strokeRect(x - 3, y - 3, w * 2.1 + 6, h * 1.9 + 6); ctx.setLineDash([]);
     } else if (p.state === "hollow") {
-      ctx.strokeStyle = P.inkLo; ctx.setLineDash([2.5, 2.5]); ctx.lineWidth = 1;
-      ctx.strokeRect(x, y, w, h); ctx.setLineDash([]);
-      ctx.beginPath(); ctx.moveTo(x + w * 0.25, y); ctx.lineTo(x + w * 0.6, y + h); ctx.stroke();
+      // 设计审计 R8：虚线+对角在小尺寸下像乱码，改为实心浅填充 + 描边
+      ctx.fillStyle = "rgba(66,86,106,.22)";
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = P.inkLo; ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, w, h);
     } else if (p.state === "red") {
       ctx.fillStyle = P.neg; ctx.fillRect(x, y, w, h);
     }
@@ -248,7 +251,7 @@
     if (topHit && gp > 0.9) {
       ctx.font = `700 11px ${SERIF}`; ctx.fillStyle = P.neg;
       ctx.strokeStyle = "rgba(255,255,255,.92)"; ctx.lineWidth = 4; ctx.lineJoin = "round";
-      const tx = Math.min(topHit.x + 2, W - 78), ty = topHit.y + 12;
+      const tx = Math.min(topHit.x + 2, W - 78), ty = topHit.y + 2;
       ctx.strokeText("⚠ 监管警示", tx, ty); ctx.fillText("⚠ 监管警示", tx, ty);
     }
   }
@@ -260,8 +263,26 @@
     if (prog < 1) raf = requestAnimationFrame(frame);
   }
 
+  function updateCoverAlt() {
+    // 设计审计 A1/A3：canvas 是纯绘制，补 aria-label 与视觉隐藏文字表
+    const L = D.ladder || {}, P2 = D.pools || {}, day = (D.meta || {}).reviewDay || "";
+    if (cv) {
+      cv.setAttribute("role", "img");
+      cv.setAttribute("tabindex", "0");
+      cv.setAttribute("aria-label",
+        `${day} 连板梯队：首板 ${L.first} 家、2 板 ${L.second} 家、3 板 ${L.third} 家、` +
+        `最高板 ${L.topName} ${L.topBoards} 板、炸板 ${P2.zb} 家、跌停 ${P2.dt} 家`);
+    }
+    const tb = document.querySelector("#cover-alt tbody");
+    if (tb) {
+      const rows = [["首板", L.first], ["2 板", L.second], ["3 板", L.third],
+                    [`最高板 ${L.topName || ""}`, L.topBoards], ["炸板", P2.zb], ["跌停", P2.dt]];
+      tb.innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1] ?? "—"}</td></tr>`).join("");
+    }
+  }
+
   function start() {
-    const r = bd.fit(); W = r.w; H = r.h; build();
+    const r = bd.fit(); W = r.w; H = r.h; build(); updateCoverAlt();
     cancelAnimationFrame(raf); t0 = null;
     // 入场动画只播一次：resize / 打印重排后直接画终态，
     // 否则任何重绘都会把整幅图退回到淡入过程中的某一帧。
@@ -274,7 +295,7 @@
     const r = cv.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
     const h = hits.find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
-    if (h) { const s = drillSrc()[h.key]; if (s) U.showDrill({ ...s, x: e.clientX, y: e.clientY }); }
+    if (h) { const s = drillSrc()[h.key]; if (s) U.showDrill({ ...s, x: e.clientX, y: e.clientY, trigger: cv }); }
   });
 
   let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(start, 180); });
