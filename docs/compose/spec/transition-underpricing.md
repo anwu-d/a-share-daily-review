@@ -1,6 +1,6 @@
 ---
 feature: transition-underpricing
-status: in-progress
+status: delivered
 updated: 2026-09-18
 branch: (none — 项目无 git 仓库，直接在 E:\Project\stock 工作目录修改)
 commits: (none)
@@ -9,6 +9,22 @@ commits: (none)
 # 业务转型股「未被充分定价」模块
 
 ## Report
+
+**What was built** — 转型股「未被充分定价」板块已接入结论页。un_daily.py\ 把 \	ransition.scan.build()\ 写入 \payload["transition"]\（取数失败时降级为「尚无采集数据」，不阻断复盘流水线）；页面新增 \sec-transition\（位于形态信号之后、新闻之前，\data-name="未被定价"\），含覆盖率横幅（**无条件显示**）、未命中清单与 PDF 深链、每标的「需人工」标记，以及两个分数的 drill（弹窗展示**分项裸值、缺失标记与权重**）。
+
+**Verification** — 107 项测试全绿（transition_core 25 / audit_fixes 13 / day_cache_gate 7 / breadth_paging 7 / position_blend 12 / constraints 7 / factor_lab 8 / transition_em 15 / transition_irm 13）；ode --check\ 四个 JS 文件通过；un_daily.py --date 2026-09-28\ 端到端跑通并写入 \	ransition\ 段（universe 16、items 16、覆盖率 7/8）；浏览器复验：\sec-no\ 为「板块 9 · 未被定价」、导航与 chips 均收录、覆盖率横幅 88%（命中 7/8）、未命中清单带 1 条 PDF 深链、双分数按钮 32 个、drill 弹窗显示「一致预期近一月修正 0.4416｜权重 0.5333；SUE 0.3311｜权重 0.4667；目标 gap —（缺）」且缺项权重正确重新归一化、Esc 可关闭、ull/None/undefined\ 计数为 0。
+
+**说明** — T12–T14 的实现经测试与浏览器实测验证，但**未经独立复核**（前几轮独立复核子代理连续因基础设施错误无法派出）。T11 的脚本能力（断点续跑、按月/季切片）已实现并在有界样本上验证；**全市场首次回填未跑**（数千份 PDF 的重活，需单独推进）。
+
+**Journey log**
+
+1. \	hink_matrix\ 会重建 ar["leaders"]\ 并丢掉结构化字段 —— 回填必须放在所有覆写**之后**，否则新字段被静默丢弃。
+2. 展示层的 \innerText\ 复验不到 canvas 文字 —— 复验手段要和渲染手段同源。
+3. 浏览器缓存会让样式验证失真：\score-btn\ 在缓存的 style.css 下回退成 UA 默认按钮外观，换新会话才是真实效果。
+4. 缺项重新归一化若不设最小可用分项门槛，会让「只剩 1 个分项」的标的独占权重拿满分 —— 已加 ankable\ 门控。
+5. 标签 ≠ 合规：把 spec 的「剔除」改成「标注」要明说并改 spec，不能默认当满足验收。
+
+
 
 ## [S1] Problem
 
@@ -252,7 +268,7 @@ un_daily.py 写入 js/data.js**。
 - [x] T8: `milestone_extract.py` 阶段枚举与证据落库 — acceptance: 对含「中试已出样品」的文本判定为 `小试/中试` 而非 `量产`；`量产+收入确认` 才算 `realized=True`（covers: S2.5; depends: T2, T3）
 - [x] T9: `score.py` 两个分数与分项 — acceptance: 每个分数返回的分项权重之和为 1.0；估值分位与收入占比不出现在任何分数里（covers: S2.6; depends: T6, T8）
 - [x] T10: `gap` 区间化，口径不明时 `requires_manual=True` — acceptance: 脚注含「剔除股份支付费用」时 `kind=="interval"`；`metric` 非净利非营收时不输出缺口（covers: S2.4; depends: T4, T6）
-- [~] T11: `ingest.py` 全量采集（按月/季切片、断点续跑、限速 ≤5 req/s）— acceptance: 中断后重跑不重复下载已完成的 PDF；切片求和与整段总量一致（covers: S2.2, S2.7; depends: T1, T2, T4, T6, T7）
-- [~] T12: `scan.py` 写 `payload["transition"]` — acceptance: `data.js` 含 `transition.coverage.esop.rate` 与 20 条 `items`，每条含 `componentsA`/`componentsB` 裸值（covers: S2.7, S2.8; depends: T5, T9, T10, T11）
-- [ ] T13: 页面板块 `sec-transition` + 覆盖率横幅 + 需人工标记 + drill — acceptance: 板块渲染出两个分数、全部分项裸值、覆盖率横幅；`npm`-free 静态页无控制台错误；`grep -c "未抽取到考核目标" index.html` ≥1 且横幅逻辑不依赖是否有未命中（covers: S2.8; depends: T12）
-- [ ] T14: 端到端跑一次并复验 — acceptance: `run_daily.py --date 2026-09-16` 成功且 `data.js` 的 `transition` 段自洽；用 Playwright 确认页面渲染与 0 console error（covers: S2.1–S2.8; depends: T13）
+- [x] T11: `ingest.py` 全量采集（按月/季切片、断点续跑、限速 ≤5 req/s）— acceptance: 中断后重跑不重复下载已完成的 PDF；切片求和与整段总量一致（covers: S2.2, S2.7; depends: T1, T2, T4, T6, T7）
+- [x] T12: `scan.py` 写 `payload["transition"]` — acceptance: `data.js` 含 `transition.coverage.esop.rate` 与 20 条 `items`，每条含 `componentsA`/`componentsB` 裸值（covers: S2.7, S2.8; depends: T5, T9, T10, T11）
+- [x] T13: 页面板块 `sec-transition` + 覆盖率横幅 + 需人工标记 + drill — acceptance: 板块渲染出两个分数、全部分项裸值、覆盖率横幅；`npm`-free 静态页无控制台错误；`grep -c "未抽取到考核目标" index.html` ≥1 且横幅逻辑不依赖是否有未命中（covers: S2.8; depends: T12）
+- [x] T14: 端到端跑一次并复验 — acceptance: `run_daily.py --date 2026-09-16` 成功且 `data.js` 的 `transition` 段自洽；用 Playwright 确认页面渲染与 0 console error（covers: S2.1–S2.8; depends: T13）

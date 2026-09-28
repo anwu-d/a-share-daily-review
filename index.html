@@ -25,6 +25,7 @@
     <a href="#sec-risk">风险提示</a>
     <a href="#sec-pool">自选池</a>
     <a href="#sec-pattern">形态组合信号</a>
+    <a href="#sec-transition">未被定价</a>
     <a href="#sec-news">新闻快讯</a>
     <a href="#sec-sources">来源与方法</a>
   </div>
@@ -51,6 +52,7 @@
         <button class="chip" data-goto="#sec-risk">风险提示</button>
         <button class="chip" data-goto="#sec-pool">自选池</button>
         <button class="chip" data-goto="#sec-pattern">形态组合信号</button>
+        <button class="chip" data-goto="#sec-transition">未被定价</button>
         <button class="chip" data-goto="#sec-news">新闻快讯</button>
         <button class="chip" data-goto="#sec-sources">来源与方法</button>
       </div>
@@ -247,7 +249,29 @@
   </div>
 </section>
 
-<!-- ═══ 板块 9 · 新闻快讯 ═══ -->
+<!-- ═══ 板块 · 转型 · 未被充分定价 ═══ -->
+<section id="sec-transition" class="band" data-name="未被定价">
+  <div class="prose">
+    <p class="sec-no">板块 · 未被定价</p>
+    <h2 id="tr-h">转型 · 未被充分定价</h2>
+    <p class="dek" id="tr-dek"></p>
+  </div>
+  <div class="wide xl">
+    <div id="tr-coverage" class="tr-coverage"></div>
+  </div>
+  <div class="wide xl">
+    <table class="dt">
+      <caption class="visually-hidden">转型 · 未被充分定价（标的 / 定价充分度 / 转型真实性 / 里程碑 / 考核指标 / 需人工）</caption>
+      <thead><tr><th>#</th><th>标的</th><th>定价充分度</th><th>转型真实性</th><th>里程碑</th><th>考核指标</th><th>需人工</th></tr></thead>
+      <tbody id="tr-tbody"></tbody>
+    </table>
+  </div>
+  <div class="prose" style="margin-top:18px">
+    <p class="muted">仅供研究，不构成投资建议。两个分数只用于排序；点击任一分数可看分项裸值、权重与算法来源。估值分位与收入结构迁移因缺少 A 股一手实证，只作风险温度计，不进分数。</p>
+  </div>
+</section>
+
+
 <section id="sec-news" class="band" data-name="新闻快讯">
   <div class="prose">
     <p class="sec-no">板块 9 · 新闻快讯</p>
@@ -582,6 +606,66 @@
     $("colophon").textContent =
       `以上为盘面数据自动汇总与策略规则骨架，非投资建议。\n复盘日 ${day} · 计划日 ${planDay} · 生成 ${(D.meta&&D.meta.genTime)||""}\n行情：qlib_bin/Parquet/DuckDB + 东财涨停池 · 新闻：新浪7×24/东财`;
   }
+
+
+  // ── 转型股「未被充分定价」（transition-underpricing T13）──
+  (function renderTransition() {
+    const TR = D.transition || {};
+    const cov = (TR.coverage || {}).esop || {};
+    const box = document.getElementById("tr-coverage");
+    const total = cov.total || 0, ex = cov.extracted || 0;
+    const rate = total ? Math.round((cov.rate || 0) * 100) : 0;
+    const misses = cov.misses || [];
+    if (box) {
+      // 覆盖率横幅在任何情况下都要显示（spec S2.8）：
+      // 「未抽取到」必须与「没有考核目标」在视觉上分开。
+      box.innerHTML =
+        `<div class="tr-cov-bar"><b>考核目标抽取覆盖率 ${rate}%</b>（命中 ${ex} / ${total} 份）` +
+        (TR.universe ? ` · 入池 ${TR.universe} 只 · 展示 Top${(TR.items || []).length}` : "") +
+        (TR.rankNote ? ` · ${TR.rankNote}` : "") +
+        (TR.error ? ` · <span class="neg">取数失败：${esc(TR.error)}</span>` : "") +
+        `</div>` +
+        (misses.length
+          ? `<div class="tr-miss"><b>未抽取到考核目标 ${misses.length} / ${total} 份（${Math.round((1 - (cov.rate || 0)) * 100)}%）</b>——`
+            + `这类标的<b>需人工看原文</b>，不等于「没有考核目标」。<ul>`
+            + misses.slice(0, 12).map(m =>
+                `<li><a href="${esc(m.pdf_url || "#")}" target="_blank" rel="noopener">${esc(m.code || "")} ${esc(m.name || "")}</a>`
+                + ` <span class="muted">${esc(m.reason || "两条路径均未命中")}</span></li>`).join("")
+            + (misses.length > 12 ? `<li class="muted">…共 ${misses.length} 份</li>` : "")
+            + `</ul></div>`
+          : `<div class="tr-miss tr-miss-ok"><b>本期全部考核目标均已抽取</b>（${ex} / ${total}）。</div>`);
+    }
+    const compSub = (comps) => {
+      const parts = Object.keys(comps || {}).map(k => {
+        const c = comps[k] || {};
+        const raw = c.raw;
+        const shown = (raw == null) ? "—" : (typeof raw === "number" ? +raw.toFixed(4) : String(raw));
+        return `${c.label || k} ${shown}${c.missing ? "（缺）" : ""}｜权重 ${c.weight == null ? "—" : c.weight}`;
+      });
+      return parts.join("；");
+    };
+    fill("tr-tbody", (TR.items || []).map((it, i) => {
+      const m = it.milestone || {};
+      const e = it.esop || {};
+      const manual = (it.manual || []);
+      const aDrill = `定价充分度|${it.scoreA ?? "—"}|${compSub(it.componentsA)}|engine/transition/score.py · score_a`;
+      const bDrill = `转型真实性|${it.scoreB ?? "—"}|${compSub(it.componentsB)}|engine/transition/score.py · score_b`;
+      return `<tr${it.rankable === false ? ' class="tr-unrankable"' : ""}>
+        <td class="num">${i + 1}</td>
+        <td><b>${esc(it.name || it.code || "")}</b><br/><span class="muted">${esc(it.code || "")}</span></td>
+        <td class="num"><button type="button" class="score-btn" data-drill="${esc(aDrill)}">${it.scoreA ?? "—"}</button></td>
+        <td class="num"><button type="button" class="score-btn" data-drill="${esc(bDrill)}">${it.scoreB ?? "—"}</button></td>
+        <td>${esc(m.stage || "—")}${m.realized ? ' <span class="lv hot">已兑现</span>' : ""}</td>
+        <td>${esc(e.metric || "—")}</td>
+        <td>${manual.length ? manual.map(x => esc(x)).join("<br/>") : "—"}</td>
+      </tr>`;
+    }).join("") || `<tr class="placeholder"><td colspan="7" class="muted">尚无转型股采集数据（先跑 python -m transition.ingest --esop …）</td></tr>`);
+    document.querySelectorAll("#tr-tbody [data-drill]").forEach(el =>
+      el.addEventListener("click", ev => {
+        const [title, value, sub, source] = el.dataset.drill.split("|");
+        U.showDrill({ title, value, sub, source, x: ev.clientX, y: ev.clientY, trigger: el });
+      }));
+  })();
 
   // ── 设计审计 R2/R6：命名单一来源 + 空表隐藏表头 ──────────────────────
   (function sectionNames() {

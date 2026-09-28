@@ -1006,6 +1006,23 @@ def main() -> None:
         "macroState": _mr.get("state"),
         "macroAsOf": _mr.get("as_of"),
     }
+
+    # ── 转型股「未被充分定价」板块（transition-underpricing T12）──
+    # 取数失败或本地无采集数据时给降级结构，不让整条复盘流水线崩掉。
+    try:
+        from transition import scan as _TSCAN
+
+        payload["transition"] = _TSCAN.build(as_of=date)
+    except Exception as e:  # noqa: BLE001
+        print(f"[transition] skip: {e}")
+        payload["transition"] = {
+            "asOf": date,
+            "coverage": {},
+            "items": [],
+            "universe": 0,
+            "error": str(e)[:120],
+            "note": "转型股取数失败或尚无采集数据（先跑 engine.transition.ingest）",
+        }
     if payload_lag:
         payload["dataLag"] = {
             "reviewDay": date,
