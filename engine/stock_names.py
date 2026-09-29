@@ -115,6 +115,25 @@ def get_name_map(codes_qlib: list[str] | None = None, force: bool = False) -> di
     return out
 
 
+def resolve_name(raw, name_map: dict[str, str] | None = None) -> str:
+    """把 sh600825 / SH600825 / 600825 统一解析成中文名；查不到时退化为 6 位码。
+
+    设计审计延伸：本地 DuckDB 梯子与部分接口给的是带市场前缀的代码，名称映射
+    缓存却按 6 位码存。若不统一解析，名称解析失败（如网络不可用）时页面会直接
+    显示 sh600825 这类原始代码。这里保证最坏也只是显示 600825。
+    """
+    s = str(raw or "")
+    if not s:
+        return s
+    c6 = s[2:] if len(s) >= 8 else s
+    if name_map is None:
+        try:
+            name_map = load_cache()
+        except Exception:
+            name_map = {}
+    name = (name_map or {}).get(s) or (name_map or {}).get(c6)
+    return name or c6
+
 def pretty(code: str, name_map: dict[str, str] | None = None) -> str:
     """SH600000 → 浦发银行(600000)"""
     if name_map is None:

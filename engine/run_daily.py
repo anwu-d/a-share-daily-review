@@ -582,6 +582,20 @@ def main() -> None:
                 lad = L
             elif L.get("topBoards"):
                 lad = {**lad, **{k: L[k] for k in ("first", "second", "third", "top", "topName", "topBoards", "highs") if k in L}}
+        # 本地 DuckDB 梯子的 topName/highs[].name 是 sh600825 这类带前缀代码。
+        # 名称解析依赖东财（网络不可用时失败），若不在此统一清洗，页面会直接显示代码。
+        # 与 leaders 同规则：查得到名字就用名字，查不到退化为 6 位码而非 sh600825。
+        try:
+            from stock_names import resolve_name as _rname
+
+            if lad.get("topName"):
+                lad["topName"] = _rname(lad["topName"])
+            if isinstance(lad.get("highs"), list):
+                for _h in lad["highs"]:
+                    if isinstance(_h, dict) and _h.get("name"):
+                        _h["name"] = _rname(_h["name"])
+        except Exception:
+            pass
         if loc.get("promo") and loc["promo"].get("den"):
             P = loc["promo"]
             promo = {

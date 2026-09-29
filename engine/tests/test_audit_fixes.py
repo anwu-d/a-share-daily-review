@@ -131,6 +131,25 @@ def test_news_late_entries_dropped_by_default():
     assert len(kept) == 1 and "复盘日后" in kept[0]["summary"]
 
 
+def test_resolve_name_strips_market_prefix():
+    """本地梯子给 sh600825 这类带前缀代码，名称缓存按 6 位码存。
+
+    解析失败时必须退化为 6 位码而不是把 sh600825 直接显示到页面上。
+    """
+    nm = {"600825": "新华传媒", "000001": "平安银行"}
+    from stock_names import resolve_name
+
+    assert resolve_name("sh600825", nm) == "新华传媒"
+    assert resolve_name("SH600825", nm) == "新华传媒"
+    assert resolve_name("600825", nm) == "新华传媒"
+    assert resolve_name("sz000001", nm) == "平安银行"
+    # 查不到名字时退化为 6 位码，绝不返回带前缀的原始串
+    assert resolve_name("sh999999", nm) == "999999"
+    assert resolve_name("999999", nm) == "999999"
+    assert resolve_name(None, nm) == ""
+    assert resolve_name("", nm) == ""
+
+
 def test_news_count_recomputed():
     items = [{"time": "2026-09-16 01:00:00", "title": "标题一", "summary": "s", "source": "a"},
              {"time": "2026-09-17 01:00:00", "title": "标题二", "summary": "s", "source": "a"}]
