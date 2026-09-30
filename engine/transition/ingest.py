@@ -55,25 +55,27 @@ def is_draft(title: str) -> bool:
 
 
 def discover_drafts(start: str, end: str) -> list[dict]:
-    """发现草案。用 fulltextSearch（pageSize=100 被尊重）为主，月度切片兜底。"""
+    """发现草案。
+
+    早先用 fulltextSearch 只翻 5 页（500 行）就停，全年范围下会漏掉大量早期草案
+    （实测全年只报 150 份，真值 632 份）。改用 announcements(category=category_gqjl_szsh)
+    ——它已按月切片、正确翻页、并做 totalAnnouncement 量级自校验。"""
     out, seen = [], set()
-    for pn in range(1, 6):
-        js = C.fulltext_page("激励计划（草案）", pn, start=start, end=end, is_fulltext=False)
-        rows = js.get("announcements") or []
-        if not rows:
-            break
-        for it in rows:
-            code = str(it.get("secCode") or "")
-            title = C.strip_em(it.get("announcementTitle"))
-            if len(code) != 6 or not code.isdigit() or code in seen:
-                continue
-            if not is_draft(title) or not it.get("adjunctUrl"):
-                continue
-            seen.add(code)
-            out.append({"code": code, "name": it.get("secName"), "title": title,
-                        "announcement_id": str(it.get("announcementId")),
-                        "announcement_time": it.get("announcementTime"),
-                        "adjunct_url": it["adjunctUrl"]})
+    for it in C.announcements("category_gqjl_szsh", start, end, expect_min=100):
+        code = str(it.get("secCode") or "")
+        title = C.strip_em(it.get("announcementTitle"))
+        if len(code) != 6 or not code.isdigit():
+            continue
+        if not is_draft(title) or not it.get("adjunctUrl"):
+            continue
+        key = (code, str(it.get("announcementId")))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"code": code, "name": it.get("secName"), "title": title,
+                    "announcement_id": str(it.get("announcementId")),
+                    "announcement_time": it.get("announcementTime"),
+                    "adjunct_url": it["adjunctUrl"]})
     return out
 
 
